@@ -10,7 +10,9 @@
     <style>
         body { font-family: Tahoma, Geneva, sans-serif; background-color: grey; color: white }
         .players span { margin: 10px; }
-        .cards { display: flex }
+        .hand { display: flex; position: absolute; bottom: 10px; }
+        .hand div { margin: 10px;}
+        .deck { font-size: 20px; display: flex; justify-content: center; }
     </style>
 
 </head>
@@ -22,8 +24,11 @@
     <div class="players">Players: <span v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}</span></div>
     <span>name: </span><input type="text" v-model="name"/>
     <div>level: {{ game.level }}</div>
-    <div class="cards">
-        <div v-if="me" v-for="card in me.cards">{{ card }}</div>
+    <div>lifes: {{ game.lifes }}</div>
+    <div class="msg">{{ msg }}</div>
+    <div class="deck" v-if="deck.length"><div>{{ lastCard }}</div></div>
+    <div class="hand">
+        <div v-if="me" v-for="card in me.cards" v-on:click="playCard(card)">{{ card }}</div>
     </div>
     <button v-if="game.level === 0" v-on:click="startGame()">start game</button>
 </div>
@@ -37,16 +42,28 @@
         data: {
             game: {},
             players: {},
+            deck: [],
             name: '',
+            msg: '',
         },
         computed: {
             me: function () {
                 return Object.keys(this.players).length && this.players[room.sessionId];
+            },
+            lastCard: function () {
+                return this.deck.length && this.deck[this.deck.length - 1];
             }
         },
         methods: {
             startGame: function () {
                 room.send({ action: 'START_GAME' });
+            },
+            playCard: function (card) {
+                room.send({ action: 'PLAY_CARD', card });
+            },
+            setMsg: function (msg) {
+                this.msg = msg;
+                setTimeout((() => this.msg = '').bind(this), 4000);
             }
         },
         created: async function () {
@@ -63,14 +80,41 @@
             room.state.players.onChange = (player, sessionId) =>
                 this.players = { ...this.players, [sessionId]: player };
 
+            room.state.deck.onAdd = (card) =>
+                this.deck = [ ...this.deck, card ];
+            room.state.deck.onRemove = (card) =>
+                this.deck = this.deck.filter(c => c !== card);
+
             room.state.game.onChange = (changes) =>
                 changes.forEach(change => this.game = { ...this.game, [change.field]: change.value });
 
-            this.$watch('name', name => room.send({ name }));
+            room.onMessage((msg) => {
+                console.log(msg);
+                if (!msg.action) return;
+                if (msg.action === 'CLEAR_DECK') {
+                    this.deck = [];
+                } else if (msg.action === 'MISTAKE') {
+                    const { player, lowestCardObj } = msg;
+                    this.setMsg(`${player.name} Fucked Up !\n ${lowestCardObj.ownerName}, pose ton ${lowestCardObj.value} va!`);
+                } else if (msg.action === 'LEVEL_UP') {
+                    this.setMsg('Well done guys !!');
+                } else if (msg.action === 'WIN') {
+                    this.setMsg('BRAVO :)');
+                } else if (msg.action === 'LOOSE') {
+                    this.setMsg('You suck !!')
+                }
+            });
+
+            this.$watch('name', name => {
+                localStorage.setItem('name', name);
+                room.send({ name })
+            });
+            if (localStorage.getItem('name')) {
+                this.name = localStorage.getItem('name');
+            }
 
         }
     });
-
 
 </script>
 </body>

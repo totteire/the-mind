@@ -1,7 +1,7 @@
 {
-  "name": "colyseus-examples",
-  "version": "1.0.0",
-  "description": "Usage Examples of Colyseus Game Server",
+  "name": "the-mind",
+  "version": "0.0.1",
+  "description": "The mind the game",
   "main": "index.js",
   "scripts": {
     "start": "ts-node index.ts",

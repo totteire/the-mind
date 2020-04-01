@@ -1,6 +1,10 @@
 import { Room, Client } from "colyseus";
 import {Schema, type, MapSchema, ArraySchema} from "@colyseus/schema";
 
+const config = {
+    LEVEL_MAX: 8,
+};
+
 export class Player extends Schema {
     @type("string")
     name = '';
@@ -10,6 +14,20 @@ export class Player extends Schema {
 export class Game extends Schema {
     @type("number")
     level = 0;
+    @type("number")
+    lifes = 4;
+    @type("boolean")
+    isStarted = false;
+
+    levelUp () {
+        this.level ++;
+    }
+    looseLife () {
+        this.lifes --;
+        if (this.lifes === 0) {
+            this.isStarted = false;
+        }
+    }
 }
 
 export class State extends Schema {
@@ -17,6 +35,14 @@ export class State extends Schema {
     players = new MapSchema<Player>();
     @type(Game)
     game = new Game();
+    @type(["number"])
+    deck = new ArraySchema<number>();
+    room: Room;
+
+    constructor(room: Room) {
+        super();
+        this.room = room;
+    }
 
     something = "This attribute won't be sent to the client-side";
 
@@ -29,17 +55,80 @@ export class State extends Schema {
     }
 
     startGame () {
+        this.game.isStarted = true;
         this.game.level = 1;
         this.dealCards();
     }
 
     dealCards () {
+        const dealtCards = [];
         for (let i = 0; i < this.game.level; i++) {
             Object.keys(this.players).forEach((sessionId) => {
-                const newCard = Math.ceil(Math.random()*100);
+                let newCard;
+                do {
+                    newCard = Math.ceil(Math.random()*100);
+                } while (dealtCards.indexOf(newCard) >= 0);
+                dealtCards.push(newCard);
                 this.players[sessionId].cards.push(newCard);
             });
         }
+        console.log('cards dealt: ', dealtCards);
+    }
+
+    playCard (sessionId: string, card: number) {
+        const player = this.players[sessionId];
+        // remove card from player's hand
+        player.cards = player.cards.filter(c => c !== card);
+        // place card on deck
+        this.deck.push(card);
+        console.log('deck: ', this.deck);
+        // check if no lower card
+        const remainingCards = Object.keys(this.players).reduce((acc, key) => [...acc, ...this.players[key].cards.map(c => ({ value: c, owner: this.players[key] }))], []);
+        // [{ owner, value }, ...]
+        if (remainingCards.find(c => c.value < card)) {
+            const lowestCardObj = remainingCards.reduce((prev, cardObj) => Math.min(prev.value, cardObj.value));
+            const lowestCardObjFlat = { ...lowestCardObj, ownerName: lowestCardObj.owner.name }
+            return this.makeMistake(player, card, lowestCardObjFlat);
+        }
+        // check if level ends
+        if (!remainingCards.length) {
+            this.levelUp();
+        }
+    }
+
+    levelUp () {
+        this.game.levelUp();
+        if (this.game.level === config.LEVEL_MAX) {
+            this.room.broadcast({ action: 'WIN' });
+            return this.endGame();
+        }
+        this.room.broadcast({ action: 'LEVEL_UP' });
+        this.dealCards();
+        this.deck = new ArraySchema<number>();
+    }
+
+    makeMistake (player, card, lowestCardObj) {
+        this.game.looseLife();
+        if (this.game.lifes === 0) {
+            return this.endGame();
+        } else {
+            this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj });
+        }
+
+        // after 5 seconds give card back
+        setTimeout((() => {
+            this.deck = this.deck.filter(c => c !== card);
+            player.cards.push(card);
+        }).bind(this), 3000)
+
+    }
+
+    endGame () {
+        this.room.broadcast({ action: 'LOOSE' });
+        this.game = new Game();
+        // empty hands
+        Object.keys(this.players).forEach(key => this.players[key].cards = new ArraySchema<number>());
+        this.deck = new ArraySchema<number>();
     }
 }
 
@@ -48,12 +137,15 @@ export class TheMind extends Room<State> {
 
     onCreate (options) {
         console.log("StateHandlerRoom created!", options);
-        this.setState(new State());
+        this.setState(new State(this));
     }
 
     onJoin (client: Client) {
         this.send(client, { hello: "world!" });
         this.state.createPlayer(client.sessionId);
+        if (this.state.game.isStarted) {
+            this.send(client, { msg: "A Game is running, sorry :("});
+        }
     }
 
     onLeave (client) {
@@ -67,6 +159,9 @@ export class TheMind extends Room<State> {
         }
         if (data.action && data.action === 'START_GAME') {
             this.state.startGame();
+        }
+        if (data.action && data.action === 'PLAY_CARD') {
+            this.state.playCard(client.sessionId, data.card);
         }
     }
 
