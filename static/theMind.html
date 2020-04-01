@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:v-on="http://www.w3.org/1999/xhtml">
+<head>
+    <meta name="viewport" content="width=device-width" />
+
+    <!-- colyseus.js client -->
+    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/master/dist/colyseus.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+
+    <style>
+        body { font-family: Tahoma, Geneva, sans-serif; }
+        .players span { margin: 10px; }
+        .cards { display: flex }
+    </style>
+
+</head>
+<body>
+<div id="app">
+    <h1>
+        The Mind, The Game
+    </h1>
+    <div class="players">Players: <span v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}</span></div>
+    <span>name: </span><input type="text" v-model="name"/>
+    <div>level: {{ game.level }}</div>
+    <div class="cards">
+        <div v-if="me" v-for="card in me.cards">{{ card }}</div>
+    </div>
+    <button v-if="game.level === 0" v-on:click="startGame()">start game</button>
+</div>
+<script>
+    const host = window.document.location.host.replace(/:.*/, '');
+
+    const client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':' + location.port : ''));
+    let room;
+    const App = new Vue({
+        el: "#app",
+        data: {
+            game: {},
+            players: {},
+            name: '',
+        },
+        computed: {
+            me: function () {
+                return Object.keys(this.players).length && this.players[room.sessionId];
+            }
+        },
+        methods: {
+            startGame: function () {
+                room.send({ action: 'START_GAME' });
+            }
+        },
+        created: async function () {
+            room = await client.joinOrCreate("the_mind");
+
+            // listen to patches coming from the server
+            room.state.players.onAdd = (player, sessionId) => {
+                this.players = { ...this.players, [sessionId]: player };
+            };
+
+            room.state.players.onRemove = (player, sessionId) =>
+                delete this.players[sessionId];
+
+            room.state.players.onChange = (player, sessionId) =>
+                this.players = { ...this.players, [sessionId]: player };
+
+            room.state.game.onChange = (changes) =>
+                changes.forEach(change => this.game = { ...this.game, [change.field]: change.value });
+
+            this.$watch('name', name => room.send({ name }));
+
+        }
+    });
+
+
+</script>
+</body>
+</html>
