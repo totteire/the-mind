@@ -2,35 +2,48 @@
 <html xmlns:v-on="http://www.w3.org/1999/xhtml">
 <head>
     <meta name="viewport" content="width=device-width" />
+    <link href="https://fonts.googleapis.com/css2?family=Freckle+Face&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
+    <link href="/styles.css" rel="stylesheet" type="text/css">
 
     <!-- colyseus.js client -->
     <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/master/dist/colyseus.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
 
-    <style>
-        body { font-family: Tahoma, Geneva, sans-serif; background-color: grey; color: white }
-        .players span { margin: 10px; }
-        .hand { display: flex; position: absolute; bottom: 10px; }
-        .hand div { margin: 10px;}
-        .deck { font-size: 20px; display: flex; justify-content: center; }
-    </style>
 
 </head>
 <body>
 <div id="app">
-    <h1>
-        The Mind, The Game
-    </h1>
-    <div class="players">Players: <span v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}</span></div>
-    <span>name: </span><input type="text" v-model="name"/>
-    <div>level: {{ game.level }}</div>
-    <div>lifes: {{ game.lifes }}</div>
-    <div class="msg">{{ msg }}</div>
-    <div class="deck" v-if="deck.length"><div>{{ lastCard }}</div></div>
-    <div class="hand">
-        <div v-if="me" v-for="card in me.cards" v-on:click="playCard(card)">{{ card }}</div>
+    <div class="topRow">
+        <div class="players">
+            <span>Pseudo: </span><input type="text" v-model="name"/>
+            <div class="player" v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}</div>
+        </div>
+        <div class="center">
+            <div class="msg">{{ msg }}</div>
+            <div class="startGame" v-if="game.level === 0" v-on:click="startGame()">jouer</div>
+            <div class="deck" v-if="deck.length">
+                <div class="card">
+                    <img src="/assets/cardBg.png"/>
+                    <div class="smallNumber">{{ lastCard }}</div>
+                    <div class="bigNumber">{{ lastCard }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="infos">
+            <div v-if="game.level > 0">Level: {{ game.level }}</div>
+            <div v-if="game.level > 0"><img src="/assets/heart.png"/>: {{ game.lifes }}</div>
+            <div class="quit" v-if="game.level > 0" v-on:click="restart()">Recommencer</div>
+        </div>
     </div>
-    <button v-if="game.level === 0" v-on:click="startGame()">start game</button>
+    <div class="bottomRow">
+        <div class="card" v-if="me" v-for="card in me.cards" v-on:click="playCard(card)">
+            <img src="/assets/cardBg.png"/>
+            <div class="smallNumber">{{ card }}</div>
+            <div class="bigNumber">{{ card }}</div>
+        </div>
+    </div>
+
 </div>
 <script>
     const host = window.document.location.host.replace(/:.*/, '');
@@ -64,15 +77,17 @@
             setMsg: function (msg) {
                 this.msg = msg;
                 setTimeout((() => this.msg = '').bind(this), 4000);
+            },
+            restart: function () {
+                room.send({ action: 'RESTART' });
             }
         },
         created: async function () {
             room = await client.joinOrCreate("the_mind");
 
             // listen to patches coming from the server
-            room.state.players.onAdd = (player, sessionId) => {
+            room.state.players.onAdd = (player, sessionId) =>
                 this.players = { ...this.players, [sessionId]: player };
-            };
 
             room.state.players.onRemove = (player, sessionId) =>
                 delete this.players[sessionId];
@@ -102,6 +117,8 @@
                     this.setMsg('BRAVO :)');
                 } else if (msg.action === 'LOOSE') {
                     this.setMsg('You suck !!')
+                } else if (msg.action === 'GAME_IN_PROGRESS') {
+                    this.setMsg("Vous arrivez en cours de partie, merci d'attendre la fin du tour !");
                 }
             });
 

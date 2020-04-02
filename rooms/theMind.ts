@@ -86,8 +86,9 @@ export class State extends Schema {
         const remainingCards = Object.keys(this.players).reduce((acc, key) => [...acc, ...this.players[key].cards.map(c => ({ value: c, owner: this.players[key] }))], []);
         // [{ owner, value }, ...]
         if (remainingCards.find(c => c.value < card)) {
-            const lowestCardObj = remainingCards.reduce((prev, cardObj) => Math.min(prev.value, cardObj.value));
-            const lowestCardObjFlat = { ...lowestCardObj, ownerName: lowestCardObj.owner.name }
+            const lowestCardValue = remainingCards.reduce((prev, cardObj) => ({ value: Math.min(prev.value, cardObj.value) }), { value: card }).value;
+            const lowestCardObj = remainingCards.find(cObj => cObj.value === lowestCardValue);
+            const lowestCardObjFlat = { ...lowestCardObj, ownerName: lowestCardObj.owner.name };
             return this.makeMistake(player, card, lowestCardObjFlat);
         }
         // check if level ends
@@ -110,6 +111,7 @@ export class State extends Schema {
     makeMistake (player, card, lowestCardObj) {
         this.game.looseLife();
         if (this.game.lifes === 0) {
+            this.room.broadcast({ action: 'LOOSE' });
             return this.endGame();
         } else {
             this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj });
@@ -124,7 +126,6 @@ export class State extends Schema {
     }
 
     endGame () {
-        this.room.broadcast({ action: 'LOOSE' });
         this.game = new Game();
         // empty hands
         Object.keys(this.players).forEach(key => this.players[key].cards = new ArraySchema<number>());
@@ -144,12 +145,16 @@ export class TheMind extends Room<State> {
         this.send(client, { hello: "world!" });
         this.state.createPlayer(client.sessionId);
         if (this.state.game.isStarted) {
-            this.send(client, { msg: "A Game is running, sorry :("});
+            this.send(client, { action: 'GAME_IN_PROGRESS' });
         }
     }
 
-    onLeave (client) {
+    async onLeave (client) {
+        // try {
+        //     await this.allowReconnection(client, 15);
+        // } catch(e) {
         this.state.removePlayer(client.sessionId);
+        // }
     }
 
     onMessage (client, data) {
@@ -162,6 +167,9 @@ export class TheMind extends Room<State> {
         }
         if (data.action && data.action === 'PLAY_CARD') {
             this.state.playCard(client.sessionId, data.card);
+        }
+        if (data.action && data.action === 'RESTART') {
+            this.state.endGame();
         }
     }
 
