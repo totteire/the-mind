@@ -10,7 +10,6 @@
     <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/master/dist/colyseus.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
 
-
 </head>
 <body>
 <div id="app">
@@ -21,6 +20,7 @@
         </div>
         <div class="center">
             <div class="msg">{{ msg }}</div>
+            <div class="gif" v-if="isGifOn"><iframe src="https://giphy.com/embed/MOWPkhRAUbR7i" width="480" height="217" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/excited-applause-minions-MOWPkhRAUbR7i">via GIPHY</a></p></div>
             <div class="startGame" v-if="game.level === 0" v-on:click="startGame()">jouer</div>
             <div class="deck" v-if="deck.length">
                 <div class="card">
@@ -33,7 +33,7 @@
         <div class="infos">
             <div v-if="game.level > 0">Level: {{ game.level }}</div>
             <div v-if="game.level > 0"><img src="/assets/heart.png"/>: {{ game.lifes }}</div>
-            <div class="quit" v-if="game.level > 0" v-on:click="restart()">Recommencer</div>
+            <div class="quit" v-if="game.level > 0" v-on:click="restart()"><img src="/assets/exit.png"></div>
         </div>
     </div>
     <div class="bottomRow">
@@ -50,6 +50,14 @@
 
     const client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':' + location.port : ''));
     let room;
+
+    const MSG = {
+        'LEVEL_UP': 'Well done guys !!',
+        'WIN': 'BRAVO :)',
+        'LOOSE': 'VIES -1',
+        'GAME_IN_PROGRESS': "Vous arrivez en cours de partie, merci d'attendre la fin du tour !",
+    };
+
     const App = new Vue({
         el: "#app",
         data: {
@@ -58,6 +66,7 @@
             deck: [],
             name: '',
             msg: '',
+            isGifOn: false,
         },
         computed: {
             me: function () {
@@ -80,6 +89,11 @@
             },
             restart: function () {
                 room.send({ action: 'RESTART' });
+            },
+            showGif: function () {
+                // TODO set gif
+                this.isGifOn = true;
+                setTimeout((() => this.isGifOn = false).bind(this), 5000);
             }
         },
         created: async function () {
@@ -106,19 +120,17 @@
             room.onMessage((msg) => {
                 console.log(msg);
                 if (!msg.action) return;
-                if (msg.action === 'CLEAR_DECK') {
-                    this.deck = [];
-                } else if (msg.action === 'MISTAKE') {
+                if (msg.action === 'MISTAKE') {
                     const { player, lowestCardObj } = msg;
-                    this.setMsg(`${player.name} Fucked Up !\n ${lowestCardObj.ownerName}, pose ton ${lowestCardObj.value} va!`);
+                    this.setMsg(`Vies -1 \n${player.name} Fucked Up !\n ${lowestCardObj.ownerName}, pose ton ${lowestCardObj.value}!`);
                 } else if (msg.action === 'LEVEL_UP') {
-                    this.setMsg('Well done guys !!');
+                    this.setMsg(MSG.LEVEL_UP);
                 } else if (msg.action === 'WIN') {
-                    this.setMsg('BRAVO :)');
+                    this.showGif();
                 } else if (msg.action === 'LOOSE') {
-                    this.setMsg('You suck !!')
+                    this.setMsg(MSG.LOOSE);
                 } else if (msg.action === 'GAME_IN_PROGRESS') {
-                    this.setMsg("Vous arrivez en cours de partie, merci d'attendre la fin du tour !");
+                    this.setMsg(MSG.GAME_IN_PROGRESS);
                 }
             });
 

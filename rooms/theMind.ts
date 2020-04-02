@@ -5,6 +5,7 @@ const config = {
     LEVEL_MAX: 8,
 };
 
+
 export class Player extends Schema {
     @type("string")
     name = '';
@@ -30,6 +31,7 @@ export class Game extends Schema {
     }
 }
 
+let nobodyPlays = false;
 export class State extends Schema {
     @type({ map: Player })
     players = new MapSchema<Player>();
@@ -43,8 +45,6 @@ export class State extends Schema {
         super();
         this.room = room;
     }
-
-    something = "This attribute won't be sent to the client-side";
 
     createPlayer (id: string) {
         this.players[ id ] = new Player();
@@ -72,6 +72,11 @@ export class State extends Schema {
                 this.players[sessionId].cards.push(newCard);
             });
         }
+        // sort hands
+        Object.keys(this.players).forEach((sessionId) => {
+            const player = this.players[sessionId];
+            player.cards.sort((a, b) => a - b);
+        });
         console.log('cards dealt: ', dealtCards);
     }
 
@@ -117,8 +122,11 @@ export class State extends Schema {
             this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj });
         }
 
+        // lock game
+        nobodyPlays = true;
         // after 5 seconds give card back
         setTimeout((() => {
+            nobodyPlays = false;
             this.deck = this.deck.filter(c => c !== card);
             player.cards.push(card);
         }).bind(this), 3000)
@@ -135,6 +143,7 @@ export class State extends Schema {
 
 export class TheMind extends Room<State> {
     maxClients = 4;
+    frozen = false;
 
     onCreate (options) {
         console.log("StateHandlerRoom created!", options);
@@ -165,12 +174,19 @@ export class TheMind extends Room<State> {
         if (data.action && data.action === 'START_GAME') {
             this.state.startGame();
         }
-        if (data.action && data.action === 'PLAY_CARD') {
+        if (data.action && data.action === 'PLAY_CARD' && !nobodyPlays) {
             this.state.playCard(client.sessionId, data.card);
         }
         if (data.action && data.action === 'RESTART') {
             this.state.endGame();
         }
+    }
+
+    freeze () {
+        this.frozen = true;
+    }
+    unfreeze() {
+        this.frozen = false;
     }
 
     onDispose () {

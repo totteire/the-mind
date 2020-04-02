@@ -16,14 +16,14 @@ body {
     position: relative;
 }
 .topRow .center .startGame { font-weight: bold; font-size: 5vw; cursor: pointer; margin-left: -10%; }
-.topRow .center .msg { position: absolute; top: 50px; font-size: 3vw; }
+.topRow .center .msg { position: absolute; top: 50px; font-size: 3vw; z-index: 9 }
 .topRow .infos { width: 20%; font-weight: bold; font-size: 3vw; }
 .topRow .infos img { width: 60px; }
-.topRow .infos .quit { position: absolute; bottom: 20px; }
+.topRow .infos .quit { position: absolute; bottom: 0px; right: 8px; cursor: pointer; }
 .msg, .infos, .startGame { color: #E58813; }
 
 .bottomRow { height: 35%; display: flex; justify-content: center; align-items: center; }
-.bottomRow .card { width: 74px; height: 115px; }
+.bottomRow .card { width: 74px; height: 115px; z-index: 5; cursor: pointer; }
 .card {
     font-family: 'Anton', sans-serif;
     position: relative;
