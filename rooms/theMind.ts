@@ -16,7 +16,7 @@ export class Player extends Schema {
 const constants = { SHURIKEN: 'SHURIKEN', LIFE: 'LIFE' };
 export class Game extends Schema {
     @type("number")
-    level = 0;
+    level = 4;
     @type("number")
     lifes = 4;
     @type("number")
