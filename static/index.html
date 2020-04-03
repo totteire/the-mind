@@ -18,7 +18,7 @@
             <div class="player" v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}{{ (players[session].cards.length) ? `: ${players[session].cards.length}`: '' }}</div>
         </div>
         <div class="center">
-            <div class="msg">{{ msg }}</div>
+            <div class="msg" v-html="msg"></div>
             <div class="gif" v-if="gif"><iframe :src="gif" width="480" height="217" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/excited-applause-minions-MOWPkhRAUbR7i">via GIPHY</a></p></div>
             <div class="startGame" v-if="game.level === 0" v-on:click="startGame()">jouer</div>
             <div class="deck" v-if="deck.length">
@@ -84,7 +84,8 @@
             },
             setMsg: function (msg) {
                 this.msg = msg;
-                setTimeout((() => this.msg = '').bind(this), 5000);
+                this.timeout && clearTimeout(this.timeout);
+                this.timeout = setTimeout((() => this.msg = '').bind(this), 5000);
             },
             restart: function () {
                 room.send({ action: 'RESTART' });
@@ -92,7 +93,7 @@
             showGif: function (gif) {
                 // TODO set gif
                 this.gif = gif;
-                setTimeout((() => this.gif = '').bind(this), 5000);
+                setTimeout((() => this.gif = '').bind(this), 9000);
             }
         },
         created: async function () {
@@ -121,7 +122,8 @@
                 if (!msg.action) return;
                 if (msg.action === 'MISTAKE') {
                     const { player, lowestCardObj } = msg;
-                    this.setMsg(`Vies -1<${player.name} Fucked Up !\n ${lowestCardObj.ownerName}, pose ton ${lowestCardObj.value}!`);
+                    this.setMsg(`${player.name} Fucked Up !<br> ${lowestCardObj.ownerName}, pose ton ${lowestCardObj.value}!`);
+                    this.showGif(msg.gif);
                 } else if (msg.action === 'LEVEL_UP') {
                     this.setMsg(MSG.LEVEL_UP);
                 } else if (msg.action === 'WIN') {

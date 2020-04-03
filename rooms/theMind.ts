@@ -144,6 +144,7 @@ export class State extends Schema {
             this.room.broadcast({ action: 'LOOSE', gif });
             return this.endGame();
         } else {
+            // const gif = await Giphy.getRandomGif('oups');
             this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj });
         }
 
