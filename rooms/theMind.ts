@@ -1,5 +1,6 @@
 import { Room, Client } from "colyseus";
 import {Schema, type, MapSchema, ArraySchema} from "@colyseus/schema";
+import * as request from 'request-promise';
 
 const config = {
     LEVEL_MAX: 8,
@@ -12,16 +13,38 @@ export class Player extends Schema {
     @type(["number"])
     cards = new ArraySchema<number>();
 }
+const constants = { SHURIKEN: 'SHURIKEN', LIFE: 'LIFE' };
 export class Game extends Schema {
     @type("number")
     level = 0;
     @type("number")
     lifes = 4;
+    @type("number")
+    shurikens = 1;
     @type("boolean")
     isStarted = false;
 
+    config = {
+        bonus: {
+            2: constants.SHURIKEN,
+            3: constants.LIFE,
+            5: constants.SHURIKEN,
+            6: constants.LIFE,
+            8: constants.SHURIKEN,
+            9: constants.LIFE,
+        }
+    };
+
     levelUp () {
         this.level ++;
+        if (this.config.bonus[this.level]) {
+            if (this.config.bonus[this.level] === constants.LIFE) {
+                this.lifes ++;
+            }
+            if (this.config.bonus[this.level] === constants.SHURIKEN) {
+                this.shurikens ++;
+            }
+        }
     }
     looseLife () {
         this.lifes --;
@@ -102,10 +125,11 @@ export class State extends Schema {
         }
     }
 
-    levelUp () {
+    async levelUp () {
         this.game.levelUp();
         if (this.game.level === config.LEVEL_MAX) {
-            this.room.broadcast({ action: 'WIN' });
+            const gif = await Giphy.getRandomGif('victory');
+            this.room.broadcast({ action: 'WIN', gif });
             return this.endGame();
         }
         this.room.broadcast({ action: 'LEVEL_UP' });
@@ -113,10 +137,11 @@ export class State extends Schema {
         this.deck = new ArraySchema<number>();
     }
 
-    makeMistake (player, card, lowestCardObj) {
+    async makeMistake (player, card, lowestCardObj) {
         this.game.looseLife();
         if (this.game.lifes === 0) {
-            this.room.broadcast({ action: 'LOOSE' });
+            const gif = await Giphy.getRandomGif('fail');
+            this.room.broadcast({ action: 'LOOSE', gif });
             return this.endGame();
         } else {
             this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj });
@@ -182,15 +207,33 @@ export class TheMind extends Room<State> {
         }
     }
 
-    freeze () {
-        this.frozen = true;
-    }
-    unfreeze() {
-        this.frozen = false;
-    }
-
     onDispose () {
         console.log("Dispose StateHandlerRoom");
     }
 
+}
+
+class Giphy {
+    static API_KEY = 'UtNOErTJUT3pMz69N8LJHB801hDkX8nM';
+    static randomGifUrl = 'https://api.giphy.com/v1/gifs/random';
+
+    static async getRandomGif (tag) {
+        const reqOpt = {
+            uri: this.randomGifUrl,
+            qs: {
+                api_key: this.API_KEY,
+                tag,
+                random_id: new Date().getTime(),
+            },
+        };
+        try {
+            const res = await request.get(reqOpt);
+            const data = JSON.parse(res).data;
+            return data && data.embed_url;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+
+    }
 }
