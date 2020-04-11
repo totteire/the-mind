@@ -1,6 +1,13 @@
 body {
     font-family: 'Anton', sans-serif;; background: black url("/assets/bg.png") no-repeat;
     background-size: cover; color: white; margin: 0;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+    -khtml-user-select: none; /* Konqueror HTML */
+    -moz-user-select: none; /* Old versions of Firefox */
+    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Opera and Firefox */
 }
 #app { margin: 10px; display: flex; flex-direction: column; height: calc(100vh - 20px); }
 .topRow { display: flex; height: 65%; }
