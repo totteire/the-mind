@@ -6,22 +6,23 @@ body {
 .topRow { display: flex; height: 65%; }
 .topRow .players { width: 25%; margin-left: 10px; font-family: 'Anton', sans-serif; }
 .topRow .players span { font-size: 1vw; }
-.topRow .players input { background: transparent; width: 103px; color: white; border: grey 1px solid; vertical-align: text-top; }
+.topRow .players input { background: transparent; width: 103px; color: white; border: grey 1px solid; vertical-align: unset; height: 1.5vw; font-size: 1.4vw }
 .topRow .players .player { margin-top: 15px; font-size: 2vw; }
 .topRow .center {
     display: flex;
     flex-direction: column;
-    width: 55%;
+    width: 50%;
     justify-content: center;
     align-items: center;
     position: relative;
 }
 .topRow .center .startGame { font-weight: bold; font-size: 5vw; cursor: pointer; margin-left: -10%; }
-.topRow .center .msg { position: absolute; top: 50px; font-size: 3vw; z-index: 9; white-space: pre }
-.topRow .center .gif { position: fixed; right: 0px; top: 32%; }
+.topRow .center .msg { position: absolute; top: 35px; font-size: 3vw; z-index: 9; width: 100%; text-align: center; background-color: #0000009e; padding: 15px; }
+.topRow .center .gif { z-index: 9; position: fixed; bottom: 10px; height: 217px; left: calc(50% - 240px); }
+.topRow .center .gif .overlay { z-index: 10; position: fixed; bottom: 10px; height: 217px; width: 480px; left: calc(50% - 240px); background-color: transparent; }
 
-.topRow .infos { width: 20%; font-weight: bold; font-size: 3vw; }
-.topRow .infos img { width: 60px; }
+.topRow .infos { width: 25%; font-weight: bold; font-size: 3vw; margin-left: 5%; }
+.topRow .infos img { width: 4vw; }
 .topRow .infos .quit { position: absolute; bottom: 0px; right: 8px; cursor: pointer; }
 .msg, .infos, .startGame { color: #E58813; }
 

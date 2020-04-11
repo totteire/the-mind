@@ -2,6 +2,8 @@ import { Room, Client } from "colyseus";
 import {Schema, type, MapSchema, ArraySchema} from "@colyseus/schema";
 import * as request from 'request-promise';
 
+const wait = (time) => new Promise(res => setTimeout(res, time));
+
 const config = {
     LEVEL_MAX: 8,
 };
@@ -16,7 +18,7 @@ export class Player extends Schema {
 const constants = { SHURIKEN: 'SHURIKEN', LIFE: 'LIFE' };
 export class Game extends Schema {
     @type("number")
-    level = 4;
+    level = 0;
     @type("number")
     lifes = 4;
     @type("number")
@@ -121,7 +123,7 @@ export class State extends Schema {
         }
         // check if level ends
         if (!remainingCards.length) {
-            this.levelUp();
+            return this.levelUp();
         }
     }
 
@@ -130,9 +132,11 @@ export class State extends Schema {
         if (this.game.level === config.LEVEL_MAX) {
             const gif = await Giphy.getRandomGif('victory');
             this.room.broadcast({ action: 'WIN', gif });
+            await wait(2000);
             return this.endGame();
         }
         this.room.broadcast({ action: 'LEVEL_UP' });
+        await wait(2000);
         this.dealCards();
         this.deck = new ArraySchema<number>();
     }
@@ -142,21 +146,22 @@ export class State extends Schema {
         if (this.game.lifes === 0) {
             const gif = await Giphy.getRandomGif('fail');
             this.room.broadcast({ action: 'LOOSE', gif });
+            await wait(2000);
             return this.endGame();
         } else {
-            // const gif = await Giphy.getRandomGif('oups');
-            this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj });
+            // lock game
+            console.log('lock');
+            nobodyPlays = true;
+
+            const gif = await Giphy.getRandomGif('oups');
+            this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj, gif });
         }
 
-        // lock game
-        nobodyPlays = true;
-        // after 5 seconds give card back
-        setTimeout((() => {
-            nobodyPlays = false;
-            this.deck = this.deck.filter(c => c !== card);
-            player.cards.push(card);
-        }).bind(this), 3000)
-
+        await wait(3000);
+        console.log('unlock');
+        nobodyPlays = false;
+        this.deck = this.deck.filter(c => c !== card);
+        player.cards.push(card);
     }
 
     endGame () {
@@ -164,11 +169,12 @@ export class State extends Schema {
         // empty hands
         Object.keys(this.players).forEach(key => this.players[key].cards = new ArraySchema<number>());
         this.deck = new ArraySchema<number>();
+        nobodyPlays = false;
     }
 }
 
 export class TheMind extends Room<State> {
-    maxClients = 4;
+    maxClients = 6;
     frozen = false;
 
     onCreate (options) {
@@ -210,27 +216,29 @@ export class TheMind extends Room<State> {
 
     onDispose () {
         console.log("Dispose StateHandlerRoom");
+        this.state.endGame();
     }
 
 }
 
 class Giphy {
     static API_KEY = 'UtNOErTJUT3pMz69N8LJHB801hDkX8nM';
-    static randomGifUrl = 'https://api.giphy.com/v1/gifs/random';
+    static randomGifUrl = 'https://api.giphy.com/v1/gifs/search';
 
-    static async getRandomGif (tag) {
+    static async getRandomGif (q) {
         const reqOpt = {
             uri: this.randomGifUrl,
             qs: {
                 api_key: this.API_KEY,
-                tag,
+                q,
                 random_id: new Date().getTime(),
             },
         };
         try {
             const res = await request.get(reqOpt);
             const data = JSON.parse(res).data;
-            return data && data.embed_url;
+            const item = data[Math.floor(data.length * Math.random())];
+            return item && item.embed_url;
         } catch (e) {
             console.error(e);
             return false;

@@ -7,7 +7,7 @@
     <link href="/styles.css" rel="stylesheet" type="text/css">
 
     <!-- colyseus.js client -->
-    <script type="text/javascript" src="https://raw.githack.com/colyseus/colyseus.js/master/dist/colyseus.js"></script>
+    <script type="text/javascript" src="/colyseus.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
 </head>
 <body>
@@ -15,12 +15,15 @@
     <div class="topRow">
         <div class="players">
             <span>Pseudo: </span><input type="text" v-model="name"/>
-            <div class="player" v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}{{ (players[session].cards.length) ? `: ${players[session].cards.length}`: '' }}</div>
+            <div class="player" v-for="session in Object.keys(players)" :key="session">{{ players[session].name }}{{ game.isStarted ? `: ${players[session].cards.length}`: '' }}</div>
         </div>
         <div class="center">
-            <div class="msg" v-html="msg"></div>
-            <div class="gif" v-if="gif"><iframe :src="gif" width="480" height="217" frameBorder="0" class="giphy-embed" allowFullScreen></iframe><p><a href="https://giphy.com/gifs/excited-applause-minions-MOWPkhRAUbR7i">via GIPHY</a></p></div>
-            <div class="startGame" v-if="game.level === 0" v-on:click="startGame()">jouer</div>
+            <div class="msg" v-if="msg" v-html="msg"></div>
+            <div class="gif" v-if="gif">
+                <iframe :src="gif" width="480" height="217" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
+                <div class="overlay" v-on:click="closeGif()"></div>
+            </div>
+            <div class="startGame" v-if="!game.isStarted" v-on:click="startGame()">jouer</div>
             <div class="deck" v-if="deck.length">
                 <div class="card">
                     <img src="/assets/cardBg.png"/>
@@ -36,7 +39,7 @@
         </div>
     </div>
     <div class="bottomRow">
-        <div class="card" v-if="me" v-for="card in me.cards" v-on:click="playCard(card)">
+        <div class="card" v-if="me && !gif" v-for="card in me.cards" v-on:click="playCard(card)">
             <img src="/assets/cardBg.png"/>
             <div class="smallNumber">{{ card }}</div>
             <div class="bigNumber">{{ card }}</div>
@@ -52,8 +55,8 @@
 
     const MSG = {
         'LEVEL_UP': 'Well done guys !!',
-        'WIN': 'BRAVO :)',
-        'LOOSE': 'VIES -1',
+        'WIN': 'BRAVISSIMO :)',
+        'LOOSE': 'You LOOSE !',
         'GAME_IN_PROGRESS': "Vous arrivez en cours de partie, merci d'attendre la fin du tour !",
     };
 
@@ -73,7 +76,7 @@
             },
             lastCard: function () {
                 return this.deck.length && this.deck[this.deck.length - 1];
-            }
+            },
         },
         methods: {
             startGame: function () {
@@ -91,10 +94,12 @@
                 room.send({ action: 'RESTART' });
             },
             showGif: function (gif) {
-                // TODO set gif
                 this.gif = gif;
-                setTimeout((() => this.gif = '').bind(this), 9000);
-            }
+                setTimeout((() => this.gif = '').bind(this), 7000);
+            },
+            closeGif: function () {
+                this.gif = null;
+            },
         },
         created: async function () {
             room = await client.joinOrCreate("the_mind");
@@ -127,8 +132,10 @@
                 } else if (msg.action === 'LEVEL_UP') {
                     this.setMsg(MSG.LEVEL_UP);
                 } else if (msg.action === 'WIN') {
+                    this.setMsg(MSG.WIN);
                     this.showGif(msg.gif);
                 } else if (msg.action === 'LOOSE') {
+                    this.setMsg(MSG.LOOSE);
                     this.showGif(msg.gif);
                 } else if (msg.action === 'GAME_IN_PROGRESS') {
                     this.setMsg(MSG.GAME_IN_PROGRESS);
