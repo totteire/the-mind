@@ -23,7 +23,7 @@
                 <iframe :src="gif" width="480" height="217" frameBorder="0" class="giphy-embed" allowFullScreen></iframe>
                 <div class="overlay" v-on:click="closeGif()"></div>
             </div>
-            <div class="startGame" v-if="!game.isStarted" v-on:click="startGame()">jouer</div>
+            <div class="startGame" v-if="!game.isStarted" v-on:click="startGame()">Commencer une partie</div>
             <div class="deck" v-if="deck.length">
                 <div class="card">
                     <img src="/assets/cardBg.png"/>
