@@ -6,6 +6,7 @@ const wait = (time) => new Promise(res => setTimeout(res, time));
 
 const config = {
   LEVEL_MAX: 8,
+  WITHDRAW_SHURIKEN_TIME: 15000,
 };
 
 
@@ -14,6 +15,10 @@ export class Player extends Schema {
   name = '';
   @type(["number"])
   cards = new ArraySchema<number>();
+  @type("boolean")
+  shurikenActive = false;
+  @type("number")
+  shurikenCard = 0;
 }
 
 const constants = { SHURIKEN: 'SHURIKEN', LIFE: 'LIFE' };
@@ -27,7 +32,7 @@ export class Game extends Schema {
   shurikens = 1;
   @type("boolean")
   isStarted = false;
-
+  
   config = {
     bonus: {
       2: constants.SHURIKEN,
@@ -38,7 +43,7 @@ export class Game extends Schema {
       9: constants.LIFE,
     }
   };
-
+  
   levelUp() {
     this.level++;
     if (this.config.bonus[this.level]) {
@@ -50,7 +55,7 @@ export class Game extends Schema {
       }
     }
   }
-
+  
   looseLife() {
     this.lifes--;
     if (this.lifes === 0) {
@@ -69,26 +74,26 @@ export class State extends Schema {
   @type(["number"])
   deck = new ArraySchema<number>();
   room: Room;
-
+  
   constructor(room: Room) {
     super();
     this.room = room;
   }
-
-  createPlayer(id: string) {
-    this.players[id] = new Player();
+  
+  createPlayer(sessionId: string) {
+    this.players[sessionId] = new Player();
   }
-
-  removePlayer(id: string) {
-    delete this.players[id];
+  
+  removePlayer(sessionId: string) {
+    delete this.players[sessionId];
   }
-
+  
   startGame() {
     this.game.isStarted = true;
     this.game.level = 1;
     this.dealCards();
   }
-
+  
   dealCards() {
     const dealtCards = [];
     for (let i = 0; i < this.game.level; i++) {
@@ -108,7 +113,7 @@ export class State extends Schema {
     });
     console.log('cards dealt: ', dealtCards);
   }
-
+  
   playCard(sessionId: string, card: number) {
     const player = this.players[sessionId];
     // remove card from player's hand
@@ -133,7 +138,7 @@ export class State extends Schema {
       return this.levelUp();
     }
   }
-
+  
   async levelUp() {
     this.game.levelUp();
     if (this.game.level === config.LEVEL_MAX) {
@@ -147,7 +152,7 @@ export class State extends Schema {
     this.dealCards();
     this.deck = new ArraySchema<number>();
   }
-
+  
   async makeMistake(player, card, lowestCardObj) {
     this.game.looseLife();
     if (this.game.lifes === 0) {
@@ -159,11 +164,11 @@ export class State extends Schema {
       // lock game
       console.log('lock');
       nobodyPlays = true;
-
+      
       const gif = await Giphy.getRandomGif('oups');
       this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj, gif });
     }
-
+    
     await wait(3000);
     console.log('unlock');
     nobodyPlays = false;
@@ -171,7 +176,61 @@ export class State extends Schema {
     player.cards.push(card);
     player.cards.sort((a, b) => a - b);
   }
+  
+  async activateShuriken(sessionId: string) {
+    const player = this.players[sessionId];
+    // check if remaining shuriken is > O
+    if (this.game.shurikens > 0) {
+      // active le shuriken du joueur 
+      if (player.shurikenActive === false) {
+        player.shurikenActive = true;
+      }
+      // + regarde si tous les joueurs ont activé le shuriken (sauf ceux qui n'ont plus de cartes)
+      const players = Object.values(this.players);
+      const playerNotReady = players.find(p => p.cards.length > 0 && !p.shurikenActive);
+      // joue le shuriken
+      if (!playerNotReady) {
+        this.playShuriken(); // appelle la fonction playShuriken
+        player.shurikenActive = false;
+      } else {
+        // + Lance untimer pour de 10sec 
+        await wait(config.WITHDRAW_SHURIKEN_TIME);
+        // désactive le shuriken du player
+        player.shurikenActive = false;
+        console.log(player.name, player.shurikenActive);
+      }
+    }
+  }
+  
+  async playShuriken() {
+    console.log("Shuriken Played !");
+    // décrémente le nombre de shuriken disponible
+    this.game.shurikens--;
+    // initialise le nombre de carte restant.
+    let cardNumber = 0;
+    await wait(2000); // tempo pour intégrer une animation 
+    for (const sessionId in this.players) {
+      if (this.players[sessionId].cards.length > 0) {
+        // ajout de cette carte dans shurikenCard du player
+        this.players[sessionId].shurikenCard = this.players[sessionId].cards[0];
+        // supprime la plus petite carte de chaque joueur (s'il reste des cartes)
+        this.players[sessionId].cards.splice(0,1);
+        // ajoute le nombre de carte restante au nombre total de cartes
+        cardNumber = cardNumber + this.players[sessionId].cards.length ;
+      }
+    }
+    // si plus de cartes en jeu => levelup
+    if (cardNumber === 0) {
+      this.levelUp();
+    }
+  }
 
+ 
+  
+  
+  
+  
+  
   endGame() {
     this.game = new Game();
     // empty hands
@@ -184,12 +243,12 @@ export class State extends Schema {
 export class TheMind extends Room<State> {
   maxClients = 6;
   frozen = false;
-
+  
   onCreate(options) {
     console.log("StateHandlerRoom created!", options);
     this.setState(new State(this));
   }
-
+  
   onJoin(client: Client) {
     this.send(client, { hello: "world!" });
     this.state.createPlayer(client.sessionId);
@@ -197,7 +256,7 @@ export class TheMind extends Room<State> {
       this.send(client, { action: 'GAME_IN_PROGRESS' });
     }
   }
-
+  
   async onLeave(client) {
     // try {
     //     await this.allowReconnection(client, 15);
@@ -205,7 +264,7 @@ export class TheMind extends Room<State> {
     this.state.removePlayer(client.sessionId);
     // }
   }
-
+  
   onMessage(client, data) {
     console.log(data);
     if (data.name) {
@@ -220,26 +279,29 @@ export class TheMind extends Room<State> {
     if (data.action && data.action === 'RESTART') {
       this.state.endGame();
     }
+    if (data.action && data.action === 'SHURIKEN') {
+      this.state.activateShuriken(client.sessionId);
+    }
   }
-
+  
   onDispose() {
     console.log("Dispose StateHandlerRoom");
     this.state.endGame();
   }
-
+  
 }
 
 class Giphy {
   static API_KEY = 'UtNOErTJUT3pMz69N8LJHB801hDkX8nM';
   static randomGifUrl = 'https://api.giphy.com/v1/gifs/search';
-
+  
   static async getRandomGif(q) {
     const reqOpt = {
       uri: this.randomGifUrl,
       qs: {
         api_key: this.API_KEY,
         q,
-        random_id: new Date().getTime(),
+        random_sessionId: new Date().getTime(),
       },
     };
     try {
@@ -251,6 +313,6 @@ class Giphy {
       console.error(e);
       return false;
     }
-
+    
   }
 }

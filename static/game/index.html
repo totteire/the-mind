@@ -35,6 +35,7 @@
         <div class="infos">
             <div v-if="game.level > 0">Level: {{ game.level }}</div>
             <div v-if="game.level > 0"><img src="/assets/heart.png"/>: {{ game.lifes }}</div>
+            <div v-if="game.level > 0"><button v-on:click="shuriken()">shuriken</button></div>
             <div class="quit" v-if="game.level > 0" v-on:click="restart()"><img src="/assets/exit.png"></div>
         </div>
     </div>
@@ -81,6 +82,9 @@
         methods: {
             startGame: function () {
                 room.send({ action: 'START_GAME' });
+            },
+            shuriken: function () {
+                room.send({ action: 'SHURIKEN' });
             },
             playCard: function (card) {
                 room.send({ action: 'PLAY_CARD', card });
