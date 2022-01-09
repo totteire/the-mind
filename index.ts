@@ -15,9 +15,10 @@ app.use(express.json());
 
 // Attach WebSocket Server on HTTP Server.
 const gameServer = new Server({
+
   server: createServer(app),
-  express: app,
-  pingInterval: 0,
+  // express: app,
+  // pingInterval: 0,
 });
 
 gameServer.define("the_mind", TheMind);

@@ -32,7 +32,7 @@ export class Game extends Schema {
   shurikens = 1;
   @type("boolean")
   isStarted = false;
-  
+
   config = {
     bonus: {
       2: constants.SHURIKEN,
@@ -43,7 +43,7 @@ export class Game extends Schema {
       9: constants.LIFE,
     }
   };
-  
+
   levelUp() {
     this.level++;
     if (this.config.bonus[this.level]) {
@@ -55,7 +55,7 @@ export class Game extends Schema {
       }
     }
   }
-  
+
   looseLife() {
     this.lifes--;
     if (this.lifes === 0) {
@@ -74,26 +74,26 @@ export class State extends Schema {
   @type(["number"])
   deck = new ArraySchema<number>();
   room: Room;
-  
+
   constructor(room: Room) {
     super();
     this.room = room;
   }
-  
+
   createPlayer(sessionId: string) {
     this.players[sessionId] = new Player();
   }
-  
+
   removePlayer(sessionId: string) {
     delete this.players[sessionId];
   }
-  
+
   startGame() {
     this.game.isStarted = true;
     this.game.level = 1;
     this.dealCards();
   }
-  
+
   dealCards() {
     const dealtCards = [];
     for (let i = 0; i < this.game.level; i++) {
@@ -113,7 +113,7 @@ export class State extends Schema {
     });
     console.log('cards dealt: ', dealtCards);
   }
-  
+
   playCard(sessionId: string, card: number) {
     const player = this.players[sessionId];
     // remove card from player's hand
@@ -138,37 +138,37 @@ export class State extends Schema {
       return this.levelUp();
     }
   }
-  
+
   async levelUp() {
     this.game.levelUp();
     if (this.game.level === config.LEVEL_MAX) {
       const gif = await Giphy.getRandomGif('victory');
-      this.room.broadcast({ action: 'WIN', gif });
+      this.room.broadcast('WIN', { gif });
       await wait(2000);
       return this.endGame();
     }
-    this.room.broadcast({ action: 'LEVEL_UP' });
+    this.room.broadcast('LEVEL_UP');
     await wait(2000);
     this.dealCards();
     this.deck = new ArraySchema<number>();
   }
-  
+
   async makeMistake(player, card, lowestCardObj) {
     this.game.looseLife();
     if (this.game.lifes === 0) {
       const gif = await Giphy.getRandomGif('fail');
-      this.room.broadcast({ action: 'LOOSE', gif });
+      this.room.broadcast('LOOSE', { gif });
       await wait(2000);
       return this.endGame();
     } else {
       // lock game
       console.log('lock');
       nobodyPlays = true;
-      
+
       const gif = await Giphy.getRandomGif('oups');
-      this.room.broadcast({ action: 'MISTAKE', player, card, lowestCardObj, gif });
+      this.room.broadcast('MISTAKE', { player, card, lowestCardObj, gif });
     }
-    
+
     await wait(3000);
     console.log('unlock');
     nobodyPlays = false;
@@ -176,12 +176,12 @@ export class State extends Schema {
     player.cards.push(card);
     player.cards.sort((a, b) => a - b);
   }
-  
+
   async activateShuriken(sessionId: string) {
     const player = this.players[sessionId];
     // check if remaining shuriken is > O
     if (this.game.shurikens > 0) {
-      // active le shuriken du joueur 
+      // active le shuriken du joueur
       if (player.shurikenActive === false) {
         player.shurikenActive = true;
       }
@@ -193,7 +193,7 @@ export class State extends Schema {
         this.playShuriken(); // appelle la fonction playShuriken
         player.shurikenActive = false;
       } else {
-        // + Lance untimer pour de 10sec 
+        // + Lance untimer pour de 10sec
         await wait(config.WITHDRAW_SHURIKEN_TIME);
         // désactive le shuriken du player
         player.shurikenActive = false;
@@ -201,14 +201,14 @@ export class State extends Schema {
       }
     }
   }
-  
+
   async playShuriken() {
     console.log("Shuriken Played !");
     // décrémente le nombre de shuriken disponible
     this.game.shurikens--;
     // initialise le nombre de carte restant.
     let cardNumber = 0;
-    await wait(2000); // tempo pour intégrer une animation 
+    await wait(2000); // tempo pour intégrer une animation
     for (const sessionId in this.players) {
       if (this.players[sessionId].cards.length > 0) {
         // ajout de cette carte dans shurikenCard du player
@@ -225,12 +225,6 @@ export class State extends Schema {
     }
   }
 
- 
-  
-  
-  
-  
-  
   endGame() {
     this.game = new Game();
     // empty hands
@@ -243,20 +237,40 @@ export class State extends Schema {
 export class TheMind extends Room<State> {
   maxClients = 6;
   frozen = false;
-  
+
   onCreate(options) {
     console.log("StateHandlerRoom created!", options);
     this.setState(new State(this));
+    this.setMetadata(options);
+
+    this.onMessage('*', (client, data) => {
+      console.log(data);
+      if (data.name) {
+        this.state.players[client.sessionId].name = data.name;
+      }
+      if (data.action && data.action === 'START_GAME') {
+        this.state.startGame();
+      }
+      if (data.action && data.action === 'PLAY_CARD' && !nobodyPlays) {
+        this.state.playCard(client.sessionId, data.card);
+      }
+      if (data.action && data.action === 'RESTART') {
+        this.state.endGame();
+      }
+      if (data.action && data.action === 'SHURIKEN') {
+        this.state.activateShuriken(client.sessionId);
+      }
+    });
   }
-  
+
   onJoin(client: Client) {
-    this.send(client, { hello: "world!" });
+    this.send(client, 'GREETINGS',  { hello: "world!" });
     this.state.createPlayer(client.sessionId);
     if (this.state.game.isStarted) {
-      this.send(client, { action: 'GAME_IN_PROGRESS' });
+      this.send(client, 'ACTION', 'GAME_IN_PROGRESS');
     }
   }
-  
+
   async onLeave(client) {
     // try {
     //     await this.allowReconnection(client, 15);
@@ -264,37 +278,21 @@ export class TheMind extends Room<State> {
     this.state.removePlayer(client.sessionId);
     // }
   }
-  
+
   onMessage(client, data) {
-    console.log(data);
-    if (data.name) {
-      this.state.players[client.sessionId].name = data.name;
-    }
-    if (data.action && data.action === 'START_GAME') {
-      this.state.startGame();
-    }
-    if (data.action && data.action === 'PLAY_CARD' && !nobodyPlays) {
-      this.state.playCard(client.sessionId, data.card);
-    }
-    if (data.action && data.action === 'RESTART') {
-      this.state.endGame();
-    }
-    if (data.action && data.action === 'SHURIKEN') {
-      this.state.activateShuriken(client.sessionId);
-    }
   }
-  
+
   onDispose() {
     console.log("Dispose StateHandlerRoom");
     this.state.endGame();
   }
-  
+
 }
 
 class Giphy {
   static API_KEY = 'UtNOErTJUT3pMz69N8LJHB801hDkX8nM';
   static randomGifUrl = 'https://api.giphy.com/v1/gifs/search';
-  
+
   static async getRandomGif(q) {
     const reqOpt = {
       uri: this.randomGifUrl,
@@ -313,6 +311,6 @@ class Giphy {
       console.error(e);
       return false;
     }
-    
+
   }
 }
