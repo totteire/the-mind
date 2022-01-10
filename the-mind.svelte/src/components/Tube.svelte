@@ -4,7 +4,7 @@
   import { fly } from 'svelte/transition';
 </script>
 
-{#if $me?.cards.length}
+{#if $me?.cards?.length}
   <div class="tube" transition:fly={{y: 50}}>
     {#each $me.cards as card}
       <Ball number={card}/>

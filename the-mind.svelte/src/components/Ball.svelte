@@ -7,7 +7,7 @@
   if (big) {
     transition = { y: 50, duration: 1000 };
   } else {
-    transition = { x: 1500, duration: 3000, delay: 2000 };
+    transition = { x: 1500, duration: 2000 };
   }
 </script>
 

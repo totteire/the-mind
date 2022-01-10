@@ -13,38 +13,34 @@
 
   let room;
 
+  const roomName = window.location.pathname.split('\/')[2];
   onMount(async () => {
-    const roomName = window.location.pathname.split('\/')[2];
     room = await client.joinOrCreate("the_mind", { roomName });
-
-    console.log('Joined successfully');
     room.onStateChange((state) => {
       console.log(room.name, "has new state:", state);
     });
-    // room.onMessage("GREETINGS ", (message) => {
-    //   console.log(message);
-    // });
-    // room.onMessage("MISTAKE", (message) => {
-    //   console.log(message);
-    // });
-    // room.onMessage("LEVEL_UP", (message) => {
-    //   console.log(message);
-    // });
-    // room.onMessage("WIN", (message) => {
-    //   console.log(message);
-    // });
-    // room.onMessage("LOOSE", (message) => {
-    //   console.log(message);
-    // });
-    // room.onMessage("GAME_IN_PROGRESS", (message) => {
-    //   console.log(message);
-    // });
+    room.onMessage("GREETINGS", () => {
+      setMe($players[room.sessionId]);
+    });
+    room.onMessage("MISTAKE", (message) => {
+      console.log(message);
+    });
+    room.onMessage("LEVEL_UP", (message) => {
+      console.log(message);
+    });
+    room.onMessage("WIN", (message) => {
+      console.log(message);
+    });
+    room.onMessage("LOOSE", (message) => {
+      console.log(message);
+    });
+    room.onMessage("GAME_IN_PROGRESS", (message) => {
+      console.log(message);
+    });
     room.onMessage((message) => {
       console.log(message);
     });
-    room.onError((code, message) => {
-      console.log(client.id, "couldn't join", room.name);
-    });
+    room.onError((code, message) => console.log(client.id, "couldn't join", room.name));
 
     room.state.players.onAdd = (player, sessionId) => onPlayerAdd(player, sessionId);
     room.state.players.onRemove = (player, sessionId) => onPlayerRemove(player, sessionId);
