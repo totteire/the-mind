@@ -5,35 +5,42 @@
   import Tube from "./components/Tube.svelte";
   import Buttons from "./components/Buttons.svelte";
   import Dashboard from "./components/Dashboard.svelte";
-  import {gameStore as game, onDeckAdd, onDeckRemove, onGameChange, onPlayerAdd, onPlayerChange, onPlayerRemove} from "./store";
+  import {gameStore as game, playersStore as players, onDeckAdd, onDeckRemove,
+    onGameChange, onPlayerAdd, onPlayerChange, onPlayerRemove, me, setMe} from "./store";
 
   const host = window.document.location.host.replace(/:.*/, '');
-
   const client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':2567' : ''));
+
   let room;
 
   onMount(async () => {
     const roomName = window.location.pathname.split('\/')[2];
-    room = await client.create("the_mind", { roomName: 'lol' });
-    client.getAvailableRooms().then(console.log);
+    room = await client.joinOrCreate("the_mind", { roomName });
 
+    console.log('Joined successfully');
     room.onStateChange((state) => {
       console.log(room.name, "has new state:", state);
     });
-    room.onMessage("MISTAKE", (message) => {
-      console.log(client.id, "received on", room.name, message);
-    });
-    room.onMessage("LEVEL_UP", (message) => {
-      console.log(client.id, "received on", room.name, message);
-    });
-    room.onMessage("WIN", (message) => {
-      console.log(client.id, "received on", room.name, message);
-    });
-    room.onMessage("LOOSE", (message) => {
-      console.log(client.id, "received on", room.name, message);
-    });
-    room.onMessage("GAME_IN_PROGRESS", (message) => {
-      console.log(client.id, "received on", room.name, message);
+    // room.onMessage("GREETINGS ", (message) => {
+    //   console.log(message);
+    // });
+    // room.onMessage("MISTAKE", (message) => {
+    //   console.log(message);
+    // });
+    // room.onMessage("LEVEL_UP", (message) => {
+    //   console.log(message);
+    // });
+    // room.onMessage("WIN", (message) => {
+    //   console.log(message);
+    // });
+    // room.onMessage("LOOSE", (message) => {
+    //   console.log(message);
+    // });
+    // room.onMessage("GAME_IN_PROGRESS", (message) => {
+    //   console.log(message);
+    // });
+    room.onMessage((message) => {
+      console.log(message);
     });
     room.onError((code, message) => {
       console.log(client.id, "couldn't join", room.name);
@@ -48,19 +55,27 @@
 
     room.state.game.onChange = (changes) => onGameChange(changes);
 
+    // const availableRooms = await client.getAvailableRooms();
+    // console.log(availableRooms);
+
   });
 
   let playerName;
+  if (localStorage.getItem('name')) {
+      playerName = localStorage.getItem('name');
+  }
   $: {
     localStorage.setItem('name', playerName);
     if (room)
-      room.send('playerName', { name: playerName })
+      room.send('action', { name: playerName });
   }
+  const startGame = (e) => room.send('action', {action: 'START_GAME' });
 </script>
 
 {#if !$game.isStarted}
   <div class="preGameContainer">
     <input bind:value={playerName} type="text" class="playerName" placeholder="player's name">
+    <button on:click={startGame}>START GAME</button>
   </div>
 {/if}
 

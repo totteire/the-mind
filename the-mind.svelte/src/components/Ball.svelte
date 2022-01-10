@@ -1,5 +1,6 @@
 <script>
-  export let big = false;
+  export let big = false
+  export let number;
   import { fly } from 'svelte/transition';
 
   let transition = {};
@@ -11,7 +12,7 @@
 </script>
 
 <div class="ball" class:big transition:fly={transition}>
-  <div class="number">13</div>
+  <div class="number">{number}</div>
 </div>
 <style>
   .ball {

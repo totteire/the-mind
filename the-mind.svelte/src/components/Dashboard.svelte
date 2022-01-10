@@ -1,14 +1,17 @@
 <script>
+  import {gameStore as game} from '../store';
 </script>
 <div class="dashboard">
-  <div class="level">LEVEL <span class="levelNumber">3</span></div>
+  <div class="level">LEVEL <span class="levelNumber">{$game.level}</span></div>
   <div class="heartContainer">
-    <div class="heart"></div>
-    <div class="heart"></div>
-    <div class="heart"></div>
-  </div>
+    {#each Array($game.lifes) as life}
+      <div class="heart"></div>
+    {/each}
+    </div>
   <div class="bonusContainer">
-    <div class="bonus"></div>
+    {#each Array($game.shuriken) as bonus}
+      <div class="bonus"></div>
+    {/each}
   </div>
 </div>
 <style>

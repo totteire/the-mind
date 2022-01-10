@@ -1,15 +1,14 @@
 <script>
+  import {me} from '../store';
   import Ball from './Ball.svelte';
   import { fly } from 'svelte/transition';
-
-  let isVisible = false;
-  setTimeout(() => isVisible = true, 1000);
 </script>
 
-{#if isVisible}
+{#if $me?.cards.length}
   <div class="tube" transition:fly={{y: 50}}>
-    <Ball/>
-    <Ball/>
+    {#each $me.cards as card}
+      <Ball number={card}/>
+    {/each}
   </div>
 {/if}
 

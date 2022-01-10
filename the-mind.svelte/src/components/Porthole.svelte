@@ -1,15 +1,18 @@
 <script>
-import { blur, fade } from 'svelte/transition';
-import Ball from "./Ball.svelte";
+  import {deckStore as deck} from '../store';
+  import { blur, fade } from 'svelte/transition';
+  import Ball from "./Ball.svelte";
 
-let visible = false;
-setTimeout(() => visible = true, 500);
+  let visible = false;
+  setTimeout(() => visible = true, 500);
 </script>
 
 <div>
   {#if visible}
     <div class="porthole" transition:fade={{duration: 1000}}>
-      <Ball big/>
+      {#if $deck.length}
+        <Ball big number={deck.last()}/>
+      {/if}
     </div>
     <div class="hole" transition:blur={{duration: 4000}}>
     </div>

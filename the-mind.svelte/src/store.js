@@ -32,6 +32,10 @@ export const onPlayerRemove = (player, sessionId) =>
       }, {})
   );
 
+// ME STORE
+export const me = writable({});
+export const setMe = (newMe) => me.update(m => newMe);
+
 // DECK STORE
 export const deckStore = writable([]);
 export const onDeckAdd = (number) =>

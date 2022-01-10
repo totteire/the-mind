@@ -1,6 +1,7 @@
 import { Room, Client } from "colyseus";
 import { Schema, type, MapSchema, ArraySchema } from "@colyseus/schema";
 import * as request from 'request-promise';
+import { jar } from "request";
 
 const wait = (time) => new Promise(res => setTimeout(res, time));
 
@@ -81,6 +82,7 @@ export class State extends Schema {
   }
 
   createPlayer(sessionId: string) {
+    console.log('creating new player');
     this.players[sessionId] = new Player();
   }
 
@@ -97,18 +99,17 @@ export class State extends Schema {
   dealCards() {
     const dealtCards = [];
     for (let i = 0; i < this.game.level; i++) {
-      Object.keys(this.players).forEach((sessionId) => {
+      this.players.forEach((player) => {
         let newCard;
         do {
           newCard = Math.ceil(Math.random() * 100);
         } while (dealtCards.indexOf(newCard) >= 0);
         dealtCards.push(newCard);
-        this.players[sessionId].cards.push(newCard);
+        player.cards.push(newCard);
       });
     }
     // sort hands
-    Object.keys(this.players).forEach((sessionId) => {
-      const player = this.players[sessionId];
+    this.players.forEach((player) => {
       player.cards.sort((a, b) => a - b);
     });
     console.log('cards dealt: ', dealtCards);
@@ -228,7 +229,7 @@ export class State extends Schema {
   endGame() {
     this.game = new Game();
     // empty hands
-    Object.keys(this.players).forEach(key => this.players[key].cards = new ArraySchema<number>());
+    this.players.forEach((player) => player.cards = new ArraySchema<number>());
     this.deck = new ArraySchema<number>();
     nobodyPlays = false;
   }
@@ -243,7 +244,7 @@ export class TheMind extends Room<State> {
     this.setState(new State(this));
     this.setMetadata(options);
 
-    this.onMessage('*', (client, data) => {
+    this.onMessage('action', (client, data) => {
       console.log(data);
       if (data.name) {
         this.state.players[client.sessionId].name = data.name;
@@ -264,10 +265,11 @@ export class TheMind extends Room<State> {
   }
 
   onJoin(client: Client) {
-    this.send(client, 'GREETINGS',  { hello: "world!" });
+    console.log('NEW Client joined'); 
+    client.send('GREETINGS',  { hello: "world!" });
     this.state.createPlayer(client.sessionId);
     if (this.state.game.isStarted) {
-      this.send(client, 'ACTION', 'GAME_IN_PROGRESS');
+      client.send('GAME_IN_PROGRESS');
     }
   }
 
@@ -277,9 +279,6 @@ export class TheMind extends Room<State> {
     // } catch(e) {
     this.state.removePlayer(client.sessionId);
     // }
-  }
-
-  onMessage(client, data) {
   }
 
   onDispose() {
