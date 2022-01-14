@@ -5,30 +5,26 @@
   import Tube from "./components/Tube.svelte";
   import Buttons from "./components/Buttons.svelte";
   import Dashboard from "./components/Dashboard.svelte";
-  import {gameStore as game, playersStore as players, onDeckAdd, onDeckRemove,
-    onGameChange, onPlayerAdd, onPlayerChange, onPlayerRemove, me, setMe} from "./store";
+  import {
+    gameStore as game, playersStore as players, onDeckAdd, onDeckRemove,
+    onGameChange, onPlayerAdd, onPlayerChange, onPlayerRemove, me, setMe
+  } from "./store";
+  import {joinOrCreate, setPlayerName, startGame} from './api.service';
 
-  const host = window.document.location.host.replace(/:.*/, '');
-  const client = new Colyseus.Client(location.protocol.replace("http", "ws") + "//" + host + (location.port ? ':2567' : ''));
-
-  let room;
-
-  const roomName = window.location.pathname.split('\/')[2];
   onMount(async () => {
     // TODO find room and join
+    const roomName = window.location.pathname.split('\/')[2];
+    await joinOrCreate(roomName);
   });
 
-  
   let playerName;
   if (localStorage.getItem('name')) {
-      playerName = localStorage.getItem('name');
+    playerName = localStorage.getItem('name');
   }
   $: {
     localStorage.setItem('name', playerName);
-    if (room)
-      room.send('action', { name: playerName });
+    setPlayerName(playerName);
   }
-  const startGame = (e) => room.send('action', {action: 'START_GAME' });
 </script>
 
 {#if !$game.isStarted}
@@ -66,12 +62,12 @@
     min-height: 100%;
     background: linear-gradient(135deg, #030305, #04104D);
   }
+
   .blur {
     filter: blur(10px);
   }
 
   .left {
-    z-index: 15;
     width: 25vw;
     min-height: 100%;
   }
@@ -82,7 +78,6 @@
   }
 
   .right {
-    z-index: 5;
     width: 25vw;
     min-height: 100%;
     display: flex;
@@ -102,6 +97,7 @@
     right: 0;
     z-index: 1;
   }
+
   .preGameContainer input {
 
   }

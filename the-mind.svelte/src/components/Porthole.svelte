@@ -11,7 +11,7 @@
   {#if visible}
     <div class="porthole" transition:fade={{duration: 1000}}>
       {#if $deck.length}
-        <Ball big number={deck.last()}/>
+        <Ball big number={$deck[$deck.length - 1]}/>
       {/if}
     </div>
     <div class="hole" transition:blur={{duration: 4000}}>

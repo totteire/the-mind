@@ -1,9 +1,16 @@
 <script>
+  import {playCard} from "../api.service";
+  import {me} from "../store";
+
+  const clickPlay = () => {
+    console.log($me.cards);
+    playCard($me.cards[0]);
+  }
 </script>
 
 <div class="buttonsContainer">
   <div class="left">
-    <div class="play">
+    <div class="play" on:click={clickPlay}>
       <div class="playText">PLAY</div>
     </div>
   </div>
@@ -36,7 +43,6 @@
     position: fixed;
     width: 100%;
     bottom: calc(5% + (100vw / 60 * 7) - 1em);
-    z-index: 5;
     display: flex;
     justify-content: space-between;
   }
