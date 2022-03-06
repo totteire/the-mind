@@ -1,5 +1,11 @@
 <script>
   import { playersStore } from '../store'
+  let players=[];
+  console.log(Object.keys($playersStore));
+  for ( let i=0; i<Object.keys($playersStore).length;i++) {
+      players.push($playersStore(i))
+    }
+  console.log(players)
 </script>
 
 <div class="players">
@@ -10,7 +16,7 @@
     </div>
     <div class="bonus"></div>
   </div>
-  {#each Object.values($playersStore) as player}
+  {#each players as player}
   <div class="player">
     <div class="rectangle">
       <div class="playerName">{player.name}</div>

@@ -123,10 +123,12 @@ export class State extends Schema {
     this.deck.push(card);
     console.log('deck: ', this.deck);
     // check if no lower card
-    const remainingCards = Object.keys(this.players).reduce((acc, key) => [...acc, ...this.players[key].cards.map(c => ({
-      value: c,
-      owner: this.players[key]
-    }))], []);
+    let remainingCards=[];
+    this.players.forEach((player) => {
+      if (player.cards.length>0) {
+        remainingCards = [...remainingCards, { owner: player, value: player.cards[0] }];
+      }        
+    });
     // [{ owner, value }, ...]
     if (remainingCards.find(c => c.value < card)) {
       const lowestCardValue = remainingCards.reduce((prev, cardObj) => ({ value: Math.min(prev.value, cardObj.value) }), { value: card }).value;
@@ -134,10 +136,22 @@ export class State extends Schema {
       const lowestCardObjFlat = { ...lowestCardObj, ownerName: lowestCardObj.owner.name };
       return this.makeMistake(player, card, lowestCardObjFlat);
     }
+  // reset of shurikenCard value
+  this.players.forEach((player) => {
+    if (card > player.shurikenCard) {
+      player.shurikenCard = 0;
+    }
+  })
     // check if level ends
     if (!remainingCards.length) {
       return this.levelUp();
     }
+
+    
+    
+
+
+    
   }
 
   async levelUp() {

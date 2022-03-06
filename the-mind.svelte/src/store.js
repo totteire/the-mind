@@ -17,11 +17,13 @@ export const onPlayerAdd = (player, sessionId) =>
     ...players,
     [sessionId]: player
   }));
-export const onPlayerChange = (player, sessionId) =>
+export const onPlayerChange = (player, sessionId) => {
+  console.log(player);
   playersStore.update(players => ({
     ...players,
     [sessionId]: player
   }));
+}
 export const onPlayerRemove = (player, sessionId) =>
   playersStore.update(players =>
     Object.keys(player)
