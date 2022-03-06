@@ -5,6 +5,7 @@
 
 </script>
 
+<!-- TODO change this -->
 {#if $me?.cards?.length}
   <div
     class="tube"

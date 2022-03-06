@@ -6,6 +6,8 @@ import {
   addPlayer,
   changePlayer,
   removePlayer,
+  addPlayerCard,
+  removePlayerCard,
   setMe
 } from "./store";
 
@@ -55,14 +57,9 @@ export const joinOrCreate = async (roomName) => {
   });
 
   room.state.players.onAdd = (player, sessionId) => {
+    player.cards.onAdd = (card, index) => addPlayerCard(sessionId, card, index); 
+    player.cards.onRemove = (card, index) => removePlayerCard(sessionId, card, index);
     addPlayer(player, sessionId);
-    player.onChange = (changes) => {
-      changes.forEach(change => {
-        player[change.field] = change.value;
-        changePlayer(player, sessionId);
-      })
-      console.log('on player change', changes);
-    }
   }
   room.state.players.onRemove = (player, sessionId) => removePlayer(player, sessionId);
   room.state.players.onChange = (player, sessionId) => changePlayer(player, sessionId);

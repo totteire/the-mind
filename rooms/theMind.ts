@@ -161,7 +161,7 @@ export class State extends Schema {
     this.room.broadcast('LEVEL_UP');
     await wait(2000);
     this.dealCards();
-    this.deck = new ArraySchema<number>();
+    this.deck.splice(0, this.deck.length);
   }
 
   async makeMistake(player, card, lowestCardObj) {
@@ -239,8 +239,8 @@ export class State extends Schema {
   endGame() {
     this.game = new Game();
     // empty hands
-    this.players.forEach((player) => player.cards = new ArraySchema<number>());
-    this.deck = new ArraySchema<number>();
+    this.players.forEach((player) => player.cards.splice(0, player.cards.length));
+    this.deck.splice(0, this.deck.length)
     nobodyPlays = false;
   }
 }

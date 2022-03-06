@@ -33,6 +33,24 @@ export const removePlayer = (player, sessionId) =>
         return obj;
       }, {})
   );
+export const addPlayerCard = (sessionId, card, index) => {
+  playersStore.update(players => ({
+    ...players,
+    [sessionId]: {
+      ...players[sessionId],
+      cards: [...players[sessionId].cards.slice(index, 1, card)],
+    }
+  }));
+}
+export const removePlayerCard = (sessionId, card, index) => {
+  playersStore.update(players => ({
+    ...players,
+    [sessionId]: {
+      ...players[sessionId],
+      cards: players[sessionId].cards.filter(c => c !== card),
+    }
+  }));
+}
 
 // ME STORE
 export const me = writable({});
