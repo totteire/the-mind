@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 
 // GAME STORE
 export const gameStore = writable({});
-export const onGameChange = (changes) =>
+export const changeGame = (changes) =>
   changes.forEach(change =>
     gameStore.update(game => ({
     ...game,
@@ -12,19 +12,19 @@ export const onGameChange = (changes) =>
 
 // PLAYERS STORE
 export const playersStore = writable({});
-export const onPlayerAdd = (player, sessionId) =>
+export const addPlayer = (player, sessionId) =>
   playersStore.update(players => ({
     ...players,
     [sessionId]: player
   }));
-export const onPlayerChange = (player, sessionId) => {
-  console.log(player);
+export const changePlayer = (player, sessionId) => {
+  console.log('Player has changed:', player);
   playersStore.update(players => ({
     ...players,
     [sessionId]: player
   }));
 }
-export const onPlayerRemove = (player, sessionId) =>
+export const removePlayer = (player, sessionId) =>
   playersStore.update(players =>
     Object.keys(player)
       .filter(sid => sid !== sessionId)
@@ -40,7 +40,7 @@ export const setMe = (newMe) => me.set(newMe);
 
 // DECK STORE
 export const deckStore = writable([]);
-export const onDeckAdd = (number) =>
+export const addToDeck = (number) =>
   deckStore.update(deck => [...deck, number]);
-export const onDeckRemove = (number) =>
+export const removeFromDeck = (number) =>
   deckStore.update(deck => deck.filter(n => n !== number));

@@ -1,7 +1,8 @@
 <script>
-  export let big = false
+  export let big = false;
   export let number;
-  import { fly } from 'svelte/transition';
+  import { fly } from "svelte/transition";
+  import { playCard } from "../api.service"
 
   let transition = {};
   if (big) {
@@ -11,9 +12,10 @@
   }
 </script>
 
-<div class="ball" class:big transition:fly={transition}>
+<div class="ball" class:big transition:fly={transition} on:click="{() => !big && playCard(number)}">
   <div class="number">{number}</div>
 </div>
+
 <style>
   .ball {
     background-image: url(/assets/ball.png);
@@ -35,5 +37,4 @@
   .big.ball .number {
     font-size: 4em;
   }
-
 </style>

@@ -87,7 +87,7 @@ export class State extends Schema {
   }
 
   removePlayer(sessionId: string) {
-    delete this.players[sessionId];
+    this.players.delete(sessionId);
   }
 
   startGame() {
@@ -118,16 +118,18 @@ export class State extends Schema {
   playCard(sessionId: string, card: number) {
     const player = this.players[sessionId];
     // remove card from player's hand
-    player.cards = player.cards.filter(c => c !== card);
+    const cardIndex = player.cards.findIndex(c => c === card);
+    player.cards.splice(cardIndex, 1);
+    player.triggerAll();
     // place card on deck
     this.deck.push(card);
     console.log('deck: ', this.deck);
     // check if no lower card
-    let remainingCards=[];
+    let remainingCards = [];
     this.players.forEach((player) => {
-      if (player.cards.length>0) {
+      if (player.cards.length > 0) {
         remainingCards = [...remainingCards, { owner: player, value: player.cards[0] }];
-      }        
+      }
     });
     // [{ owner, value }, ...]
     if (remainingCards.find(c => c.value < card)) {
@@ -136,22 +138,16 @@ export class State extends Schema {
       const lowestCardObjFlat = { ...lowestCardObj, ownerName: lowestCardObj.owner.name };
       return this.makeMistake(player, card, lowestCardObjFlat);
     }
-  // reset of shurikenCard value
-  this.players.forEach((player) => {
-    if (card > player.shurikenCard) {
-      player.shurikenCard = 0;
-    }
-  })
+    // reset of shurikenCard value
+    this.players.forEach((player) => {
+      if (card > player.shurikenCard) {
+        player.shurikenCard = 0;
+      }
+    })
     // check if level ends
     if (!remainingCards.length) {
       return this.levelUp();
     }
-
-    
-    
-
-
-    
   }
 
   async levelUp() {
@@ -229,9 +225,9 @@ export class State extends Schema {
         // ajout de cette carte dans shurikenCard du player
         this.players[sessionId].shurikenCard = this.players[sessionId].cards[0];
         // supprime la plus petite carte de chaque joueur (s'il reste des cartes)
-        this.players[sessionId].cards.splice(0,1);
+        this.players[sessionId].cards.splice(0, 1);
         // ajoute le nombre de carte restante au nombre total de cartes
-        cardNumber = cardNumber + this.players[sessionId].cards.length ;
+        cardNumber = cardNumber + this.players[sessionId].cards.length;
       }
     }
     // si plus de cartes en jeu => levelup
@@ -258,29 +254,28 @@ export class TheMind extends Room<State> {
     this.setState(new State(this));
     this.setMetadata(options);
 
-    this.onMessage('action', (client, data) => {
-      console.log(data);
-      if (data.name) {
-        this.state.players[client.sessionId].name = data.name;
+    this.onMessage('SET_NAME', (client, { name }) => {
+      this.state.players[client.sessionId].name = name;
+    });
+    this.onMessage('START_GAME', () => {
+      this.state.startGame();
+    });
+    this.onMessage('PLAY_CARD', (client, { card }) => {
+      if (!nobodyPlays) {
+        this.state.playCard(client.sessionId, card);
       }
-      if (data.action && data.action === 'START_GAME') {
-        this.state.startGame();
-      }
-      if (data.action && data.action === 'PLAY_CARD' && !nobodyPlays) {
-        this.state.playCard(client.sessionId, data.card);
-      }
-      if (data.action && data.action === 'RESTART') {
-        this.state.endGame();
-      }
-      if (data.action && data.action === 'SHURIKEN') {
-        this.state.activateShuriken(client.sessionId);
-      }
+    });
+    this.onMessage('RESTART', () => {
+      this.state.endGame();
+    });
+    this.onMessage('SHURIKEN', (client) => {
+      this.state.activateShuriken(client.sessionId);
     });
   }
 
   onJoin(client: Client) {
-    console.log('NEW Client joined'); 
-    client.send('GREETINGS',  { hello: "world!" });
+    console.log('NEW Client joined');
+    client.send('GREETINGS', { hello: "world!" });
     this.state.createPlayer(client.sessionId);
     if (this.state.game.isStarted) {
       client.send('GAME_IN_PROGRESS');

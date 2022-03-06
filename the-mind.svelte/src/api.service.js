@@ -1,11 +1,11 @@
 import {
   playersStore as players,
-  onDeckAdd,
-  onDeckRemove,
-  onGameChange,
-  onPlayerAdd,
-  onPlayerChange,
-  onPlayerRemove,
+  addToDeck,
+  removeFromDeck,
+  changeGame,
+  addPlayer,
+  changePlayer,
+  removePlayer,
   setMe
 } from "./store";
 
@@ -36,35 +36,44 @@ export const joinOrCreate = async (roomName) => {
     });
   });
   room.onMessage("MISTAKE", (message) => {
-    console.log(message);
+    // console.log(message);
   });
   room.onMessage("LEVEL_UP", (message) => {
-    console.log(message);
+    // console.log(message);
   });
   room.onMessage("WIN", (message) => {
-    console.log(message);
+    // console.log(message);
   });
   room.onMessage("LOOSE", (message) => {
-    console.log(message);
+    // console.log(message);
   });
   room.onMessage("GAME_IN_PROGRESS", (message) => {
-    console.log(message);
+    // console.log(message);
   });
   room.onError((code, message) => {
     console.log(client.id, "couldn't join", room.name);
   });
 
-  room.state.players.onAdd = (player, sessionId) => onPlayerAdd(player, sessionId);
-  room.state.players.onRemove = (player, sessionId) => onPlayerRemove(player, sessionId);
-  room.state.players.onChange = (player, sessionId) => onPlayerChange(player, sessionId);
+  room.state.players.onAdd = (player, sessionId) => {
+    addPlayer(player, sessionId);
+    player.onChange = (changes) => {
+      changes.forEach(change => {
+        player[change.field] = change.value;
+        changePlayer(player, sessionId);
+      })
+      console.log('on player change', changes);
+    }
+  }
+  room.state.players.onRemove = (player, sessionId) => removePlayer(player, sessionId);
+  room.state.players.onChange = (player, sessionId) => changePlayer(player, sessionId);
 
-  room.state.deck.onAdd = (number) => onDeckAdd(number);
-  room.state.deck.onRemove = (number) => onDeckRemove(number);
+  room.state.deck.onAdd = (number) => addToDeck(number);
+  room.state.deck.onRemove = (number) => removeFromDeck(number);
 
-  room.state.game.onChange = (changes) => onGameChange(changes);
+  room.state.game.onChange = (changes) => changeGame(changes);
 }
 
-export const setPlayerName = (name) => room && room.send('action', { name });
-export const startGame = () => room.send('action', { action: 'START_GAME' });
-export const playCard = (card) => room.send('action', { action: 'PLAY_CARD', card });
+export const setPlayerName = (name) => room.send('SET_NAME', { name });
+export const startGame = () => room.send('START_GAME');
+export const playCard = (card) => room.send('PLAY_CARD', { card });
 

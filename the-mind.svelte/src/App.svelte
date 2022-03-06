@@ -1,35 +1,42 @@
 <script>
-  import {onMount} from "svelte";
+  import { onMount } from "svelte";
   import Players from "./components/Players.svelte";
   import Porthole from "./components/Porthole.svelte";
   import Tube from "./components/Tube.svelte";
   import Buttons from "./components/Buttons.svelte";
   import Dashboard from "./components/Dashboard.svelte";
   import {
-    gameStore as game, playersStore as players, onDeckAdd, onDeckRemove,
-    onGameChange, onPlayerAdd, onPlayerChange, onPlayerRemove, me, setMe
+    gameStore as game,
   } from "./store";
-  import {joinOrCreate, setPlayerName, startGame} from './api.service';
+  import { joinOrCreate, setPlayerName, startGame } from "./api.service";
+
+  let playerName;
 
   onMount(async () => {
     // TODO find room and join
-    const roomName = window.location.pathname.split('\/')[2];
+    const roomName = window.location.pathname.split("/")[2];
     await joinOrCreate(roomName);
+    if (localStorage.getItem("name")) {
+      playerName = localStorage.getItem("name");
+    }
   });
 
-  let playerName;
-  if (localStorage.getItem('name')) {
-    playerName = localStorage.getItem('name');
-  }
   $: {
-    localStorage.setItem('name', playerName);
-    setPlayerName(playerName);
+    if (playerName) {
+      localStorage.setItem("name", playerName);
+      setPlayerName(playerName);
+    }
   }
 </script>
 
 {#if !$game.isStarted}
   <div class="preGameContainer">
-    <input bind:value={playerName} type="text" class="playerName" placeholder="player's name">
+    <input
+      bind:value={playerName}
+      type="text"
+      class="playerName"
+      placeholder="player's name"
+    />
     <button on:click={startGame}>START GAME</button>
   </div>
 {/if}
@@ -37,20 +44,20 @@
 <main class:blur={!$game.isStarted}>
   <div class="left">
     {#if $game.isStarted}
-      <Players/>
+      <Players />
     {/if}
   </div>
   <div class="middle">
-    <Porthole/>
+    <Porthole />
   </div>
   <div class="right">
     {#if $game.isStarted}
-      <Dashboard/>
+      <Dashboard />
     {/if}
   </div>
   {#if $game.isStarted}
-    <Buttons/>
-    <Tube/>
+    <Buttons />
+    <Tube />
   {/if}
 </main>
 
@@ -60,7 +67,7 @@
     display: flex;
     flex-direction: row;
     min-height: 100%;
-    background: linear-gradient(135deg, #030305, #04104D);
+    background: linear-gradient(135deg, #030305, #04104d);
   }
 
   .blur {
@@ -98,7 +105,6 @@
     z-index: 1;
   }
 
-  .preGameContainer input {
-
-  }
+  /* .preGameContainer input {
+  } */
 </style>
