@@ -19,8 +19,8 @@ export const addPlayer = (player, sessionId) => {
     [sessionId]: {...player}
   }))};
 export const changePlayer = (sessionId, changes) => {
-  console.log('changePlayer with ', [...changes.find(c => c.field === 'cards').value]);
-  changes.forEach(change => 
+  const primitiveChanges = changes.filter(c => c.field !== 'cards')
+  primitiveChanges.forEach(change => 
     playersStore.update(players => ({
       ...players,
       [sessionId]: {
@@ -28,7 +28,8 @@ export const changePlayer = (sessionId, changes) => {
         [change.field]: change.value
       }
     }))
-  )};
+  )
+};
 export const changePlayerList = (player, sessionId) => {
   console.log('Player has changed:', player);
   playersStore.update(players => ({
