@@ -255,7 +255,7 @@ export class TheMind extends Room<State> {
     this.setMetadata(options);
 
     this.onMessage('SET_NAME', (client, { name }) => {
-      this.state.players[client.sessionId].name = name;
+      this.state.players.get(client.sessionId).name = name;
     });
     this.onMessage('START_GAME', () => {
       this.state.startGame();

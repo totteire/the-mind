@@ -1,7 +1,6 @@
 <script>
   import { playersStore } from "../store";
 </script>
-
 <div class="players">
   <div class="header">
     <div class="rectangle">
@@ -11,6 +10,7 @@
     <div class="bonus" />
   </div>
   {#each Object.values($playersStore) as player}
+    <!-- {@debug player} -->
     <div class="player">
       <div class="rectangle">
         <div class="playerName">{player.name}</div>

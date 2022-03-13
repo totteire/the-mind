@@ -5,6 +5,7 @@ import {
   changeGame,
   addPlayer,
   changePlayer,
+  changePlayerList,
   removePlayer,
   addPlayerCard,
   removePlayerCard,
@@ -21,7 +22,6 @@ const roomName = window.location.pathname.split('\/')[2];
 export const joinOrCreate = async (roomName) => {
   roomName = roomName || 'default';
   const rooms = await client.getAvailableRooms();
-  console.log(rooms);
   const myRoom = rooms.find(r => r.metadata.roomName === roomName);
   if (myRoom) {
     room = await client.joinById(myRoom.roomId);
@@ -29,11 +29,11 @@ export const joinOrCreate = async (roomName) => {
     room = await client.create('the_mind', { roomName });
   }
   room.onStateChange((state) => {
-    console.log(room.name, "has new state:", state);
+    // console.log(room.name, "has new state:", state);
   });
   room.onMessage("GREETINGS", () => {
     const unsubscribe = players.subscribe(players => {
-      console.log('subscribed players', players);
+      console.log('updated me with ', [...players[room.sessionId].cards]);
       setMe(players[room.sessionId]);
     });
   });
@@ -57,12 +57,13 @@ export const joinOrCreate = async (roomName) => {
   });
 
   room.state.players.onAdd = (player, sessionId) => {
+    player.onChange = (changes) => changePlayer(sessionId, changes);
     player.cards.onAdd = (card, index) => addPlayerCard(sessionId, card, index); 
     player.cards.onRemove = (card, index) => removePlayerCard(sessionId, card, index);
     addPlayer(player, sessionId);
   }
   room.state.players.onRemove = (player, sessionId) => removePlayer(player, sessionId);
-  room.state.players.onChange = (player, sessionId) => changePlayer(player, sessionId);
+  room.state.players.onChange = (player, sessionId) => changePlayerList(player, sessionId);
 
   room.state.deck.onAdd = (number) => addToDeck(number);
   room.state.deck.onRemove = (number) => removeFromDeck(number);

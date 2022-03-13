@@ -1,12 +1,13 @@
 <script>
-  import { me } from "../store";
+  import { me, gameStore as game } from "../store";
   import Ball from "./Ball.svelte";
   import { fly } from "svelte/transition";
 
 </script>
 
 <!-- TODO change this -->
-{#if $me?.cards?.length}
+<!-- {@debug $me} -->
+{#if $game.isStarted}
   <div
     class="tube"
     transition:fly={{ y: 300, duration: 1000, delay: 0, opacity: 1 }}
