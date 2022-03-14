@@ -10,11 +10,11 @@
 <div>
   {#if visible}
     <div class="porthole" transition:fade={{duration: 1000}}>
+    </div>
+    <div class="background" transition:blur={{duration: 4000}}>
       {#if $deck.length}
         <Ball big number={$deck[$deck.length - 1]}/>
       {/if}
-    </div>
-    <div class="hole" transition:blur={{duration: 4000}}>
     </div>
   {/if}
 </div>
@@ -30,18 +30,18 @@
     background-size: cover;
     background-position: center;
     z-index: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
-  .hole {
+  .background {
     position: fixed;
     top: calc(50% - 10em);
     left: calc(50% - 10em);
-    z-index: 1;
+    z-index: 0;
     background: linear-gradient(135deg, #CF2AE1, #009FDC);
     width: 20em;
     height: 20em;
     border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 </style>

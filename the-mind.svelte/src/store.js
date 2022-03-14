@@ -12,12 +12,11 @@ export const changeGame = (changes) =>
 
 // PLAYERS STORE
 export const playersStore = writable({});
-export const addPlayer = (player, sessionId) => {
-  console.log('add Player with', [...player.cards]);
+export const addPlayer = (player, sessionId) =>
   playersStore.update(players => ({
     ...players,
     [sessionId]: {...player}
-  }))};
+  }));
 export const changePlayer = (sessionId, changes) => {
   const primitiveChanges = changes.filter(c => c.field !== 'cards')
   primitiveChanges.forEach(change => 
@@ -30,13 +29,11 @@ export const changePlayer = (sessionId, changes) => {
     }))
   )
 };
-export const changePlayerList = (player, sessionId) => {
-  console.log('Player has changed:', player);
+export const changePlayerList = (player, sessionId) =>
   playersStore.update(players => ({
     ...players,
     [sessionId]: {...player}
   }));
-}
 export const removePlayer = (player, sessionId) =>
   playersStore.update(players =>
     Object.keys(player)
@@ -46,8 +43,7 @@ export const removePlayer = (player, sessionId) =>
         return obj;
       }, {})
   );
-export const addPlayerCard = (sessionId, card, index) => {
-  console.log('add player card ', card);
+export const addPlayerCard = (sessionId, card, index) =>
   playersStore.update(players => {
     return {
     ...players,
@@ -56,16 +52,14 @@ export const addPlayerCard = (sessionId, card, index) => {
       cards: [...players[sessionId].cards, card],
     }
   }});
-}
-export const removePlayerCard = (sessionId, card, index) => {
+export const removePlayerCard = (sessionId, card, index) =>
   playersStore.update(players => ({
     ...players,
     [sessionId]: {
       ...players[sessionId],
-      cards: players[sessionId].cards.filter(c => c !== card),
+      cards: players[sessionId].cards.slice(players[sessionId].cards.indexOf(card), 1),
     }
   }));
-}
 
 // ME STORE
 export const me = writable({});

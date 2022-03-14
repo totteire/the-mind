@@ -1,7 +1,6 @@
 import { Room, Client } from "colyseus";
 import { Schema, type, MapSchema, ArraySchema } from "@colyseus/schema";
 import * as request from 'request-promise';
-import { jar } from "request";
 
 const wait = (time) => new Promise(res => setTimeout(res, time));
 
@@ -112,6 +111,7 @@ export class State extends Schema {
     this.players.forEach((player) => {
       player.cards.sort((a, b) => a - b);
     });
+    this.players.triggerAll();
     console.log('cards dealt: ', dealtCards);
   }
 
@@ -120,7 +120,6 @@ export class State extends Schema {
     // remove card from player's hand
     const cardIndex = player.cards.findIndex(c => c === card);
     player.cards.splice(cardIndex, 1);
-    player.triggerAll();
     // place card on deck
     this.deck.push(card);
     console.log('deck: ', this.deck);
@@ -153,8 +152,8 @@ export class State extends Schema {
   async levelUp() {
     this.game.levelUp();
     if (this.game.level === config.LEVEL_MAX) {
-      const gif = await Giphy.getRandomGif('victory');
-      this.room.broadcast('WIN', { gif });
+      // const gif = await Giphy.getRandomGif('victory');
+      this.room.broadcast('WIN');
       await wait(2000);
       return this.endGame();
     }
@@ -165,10 +164,11 @@ export class State extends Schema {
   }
 
   async makeMistake(player, card, lowestCardObj) {
+    console.log('Make mistake', card, lowestCardObj)
     this.game.looseLife();
     if (this.game.lifes === 0) {
-      const gif = await Giphy.getRandomGif('fail');
-      this.room.broadcast('LOOSE', { gif });
+      // const gif = await Giphy.getRandomGif('fail');
+      this.room.broadcast('LOOSE');
       await wait(2000);
       return this.endGame();
     } else {
@@ -176,8 +176,8 @@ export class State extends Schema {
       console.log('lock');
       nobodyPlays = true;
 
-      const gif = await Giphy.getRandomGif('oups');
-      this.room.broadcast('MISTAKE', { player, card, lowestCardObj, gif });
+      // const gif = await Giphy.getRandomGif('oups');
+      this.room.broadcast('MISTAKE', { player, card, lowestCardObj });
     }
 
     await wait(3000);

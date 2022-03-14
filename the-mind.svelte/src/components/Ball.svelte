@@ -2,19 +2,26 @@
   export let big = false;
   export let number;
   import { fly } from "svelte/transition";
-  import { playCard } from "../api.service"
-
-  let transition = {};
-  if (big) {
-    transition = { y: 50, duration: 1000 };
-  } else {
-    transition = { x: 1500, duration: 2000 };
-  }
+  import { playCard } from "../api.service";
 </script>
 
-<div class="ball" class:big transition:fly={transition} on:click="{() => !big && playCard(number)}">
-  <div class="number">{number}</div>
-</div>
+{#if big}
+  <div
+    class="big ball"
+    in:fly={{ y: 500, duration: 1000, delay: 1000 }}
+    out:fly={{ y: -500, duration: 1000 }}
+  >
+    <div class="number">{number}</div>
+  </div>
+{:else}
+  <div
+    class="ball"
+    in:fly={{ x: 1500, duration: 2000 }}
+    out:fly={{ x: -1500, duration: 2000 }}
+  >
+    <div class="number">{number}</div>
+  </div>
+{/if}
 
 <style>
   .ball {
@@ -23,6 +30,7 @@
     background-position: center;
     width: 4em;
     height: 4em;
+    margin: 10px;
     display: flex;
     align-items: center;
     justify-content: center;

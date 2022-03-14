@@ -29,7 +29,7 @@ export const joinOrCreate = async (roomName) => {
     room = await client.create('the_mind', { roomName });
   }
   room.onStateChange((state) => {
-    // console.log(room.name, "has new state:", state);
+    console.log("new state:", state);
   });
   room.onMessage("GREETINGS", () => {
     const unsubscribe = players.subscribe(players => {
@@ -60,6 +60,7 @@ export const joinOrCreate = async (roomName) => {
     player.onChange = (changes) => changePlayer(sessionId, changes);
     player.cards.onAdd = (card, index) => addPlayerCard(sessionId, card, index); 
     player.cards.onRemove = (card, index) => removePlayerCard(sessionId, card, index);
+    player.cards.onChange = (card, key) => console.log('playerCard onChange', card, key);
     addPlayer(player, sessionId);
   }
   room.state.players.onRemove = (player, sessionId) => removePlayer(player, sessionId);
