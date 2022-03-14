@@ -57,7 +57,7 @@ export const removePlayerCard = (sessionId, card, index) =>
     ...players,
     [sessionId]: {
       ...players[sessionId],
-      cards: players[sessionId].cards.slice(players[sessionId].cards.indexOf(card), 1),
+      cards: players[sessionId].cards.filter(c => c !== card),
     }
   }));
 

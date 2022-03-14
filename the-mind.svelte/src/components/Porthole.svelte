@@ -3,8 +3,19 @@
   import { blur, fade } from 'svelte/transition';
   import Ball from "./Ball.svelte";
 
+  // First appearence
   let visible = false;
   setTimeout(() => visible = true, 500);
+
+  let currentNumber;
+  deck.subscribe(newDeck => {
+    if (currentNumber) {
+      currentNumber = undefined;
+      setTimeout(() => currentNumber = newDeck.pop(), 500)
+    } else {
+      currentNumber = newDeck.pop();
+    }
+  });
 </script>
 
 <div>
@@ -12,8 +23,8 @@
     <div class="porthole" transition:fade={{duration: 1000}}>
     </div>
     <div class="background" transition:blur={{duration: 4000}}>
-      {#if $deck.length}
-        <Ball big number={$deck[$deck.length - 1]}/>
+      {#if currentNumber}
+        <Ball big number={currentNumber}/>
       {/if}
     </div>
   {/if}

@@ -2,7 +2,6 @@
   export let big = false;
   export let number;
   import { fly } from "svelte/transition";
-  import { playCard } from "../api.service";
 </script>
 
 {#if big}

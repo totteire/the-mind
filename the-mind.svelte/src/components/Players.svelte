@@ -10,13 +10,10 @@
     <div class="bonus" />
   </div>
   {#each Object.values($playersStore) as player}
-    <!-- {@debug player} -->
     <div class="player">
       <div class="rectangle">
         <div class="playerName">{player.name}</div>
-        {#if player.cards.length}
-          <div class="playerBalls">{player.cards.length}</div>
-        {/if}
+        <div class="playerBalls">{player.cards.length}</div>
       </div>
       {#if player.shurikenActive}
         <div class="bonus" />
