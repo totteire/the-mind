@@ -2,7 +2,7 @@
   "name": "the-mind",
   "version": "0.1.0",
   "description": "The mind the game",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "start": "ts-node index.ts",
     "heroku-postbuild": "npm run build"
