@@ -3,5 +3,6 @@ package-lock.json
 npm-debug.log
 .DS_Store
 */public/build
+static/game/*
 .idea
 .vscode
