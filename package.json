@@ -4,8 +4,7 @@
   "description": "The mind the game",
   "main": "index.ts",
   "scripts": {
-    "start": "ts-node index.ts",
-    "heroku-postbuild": "npm run build"
+    "start": "ts-node index.ts"
   },
   "engines": {
     "node": "14.17.1"
