@@ -198,7 +198,7 @@ export class State extends Schema {
       }
       // + regarde si tous les joueurs ont activé le shuriken (sauf ceux qui n'ont plus de cartes)
       const players = Object.values(this.players);
-      const playerNotReady = players.find(p => p.cards.length > 0 && !p.shurikenActive);
+      const playerNotReady = players.find(p => p.cards?.length && !p.shurikenActive);
       // joue le shuriken
       if (!playerNotReady) {
         this.playShuriken(); // appelle la fonction playShuriken

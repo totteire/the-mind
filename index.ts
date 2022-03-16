@@ -22,7 +22,7 @@ const gameServer = new Server({
 
 gameServer.define("the_mind", TheMind);
 
-app.use('/', express.static(path.join(__dirname, "static")));
+app.use('/', express.static(path.join(__dirname, "static/game")));
 app.use('/team/*', express.static(path.join(__dirname, "static/game")));
 
 app.use('/monitoring', monitor());
