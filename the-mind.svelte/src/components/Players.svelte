@@ -1,6 +1,7 @@
 <script>
   import { playersStore } from "../store";
 </script>
+
 <div class="players">
   <div class="header">
     <div class="rectangle">
@@ -10,15 +11,17 @@
     <div class="bonus" />
   </div>
   {#each Object.values($playersStore) as player}
-    <div class="player">
-      <div class="rectangle">
-        <div class="playerName">{player.name}</div>
-        <div class="playerBalls">{player.cards.length}</div>
+    {#if player}
+      <div class="player">
+        <div class="rectangle">
+          <div class="playerName">{player.name}</div>
+          <div class="playerBalls">{player.cards.length}</div>
+        </div>
+        {#if player.shurikenActive}
+          <div class="bonus" />
+        {/if}
       </div>
-      {#if player.shurikenActive}
-        <div class="bonus" />
-      {/if}
-    </div>
+    {/if}
   {/each}
 </div>
 

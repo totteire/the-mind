@@ -81,12 +81,13 @@ export class State extends Schema {
   }
 
   createPlayer(sessionId: string) {
-    console.log('creating new player');
     this.players[sessionId] = new Player();
+    console.log('created new player, now ', this.players.size, 'players');
   }
 
   removePlayer(sessionId: string) {
     this.players.delete(sessionId);
+    console.log('removed player, now ', this.players.size, 'players');
   }
 
   startGame() {
@@ -119,6 +120,7 @@ export class State extends Schema {
     const player = this.players[sessionId];
     // remove card from player's hand
     const cardIndex = player.cards.findIndex(c => c === card);
+    if (isNaN(cardIndex)) return;
     player.cards.splice(cardIndex, 1);
     // place card on deck
     this.deck.push(card);
@@ -198,7 +200,7 @@ export class State extends Schema {
       }
       // + regarde si tous les joueurs ont activé le shuriken (sauf ceux qui n'ont plus de cartes)
       const players = Object.values(this.players);
-      const playerNotReady = players.find(p => p.cards?.length && !p.shurikenActive);
+      const playerNotReady = players.find(p => p.cards?.length > 0 && !p.shurikenActive);
       // joue le shuriken
       if (!playerNotReady) {
         this.playShuriken(); // appelle la fonction playShuriken

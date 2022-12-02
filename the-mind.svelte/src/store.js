@@ -5,21 +5,22 @@ export const gameStore = writable({});
 export const changeGame = (changes) =>
   changes.forEach(change =>
     gameStore.update(game => ({
-    ...game,
+      ...game,
       [change.field]: change.value
     }))
   );
 
 // PLAYERS STORE
 export const playersStore = writable({});
+window.players = playersStore;
 export const addPlayer = (player, sessionId) =>
   playersStore.update(players => ({
     ...players,
-    [sessionId]: {...player}
+    [sessionId]: { ...player }
   }));
 export const changePlayer = (sessionId, changes) => {
   const primitiveChanges = changes.filter(c => c.field !== 'cards')
-  primitiveChanges.forEach(change => 
+  primitiveChanges.forEach(change =>
     playersStore.update(players => ({
       ...players,
       [sessionId]: {
@@ -32,26 +33,34 @@ export const changePlayer = (sessionId, changes) => {
 export const changePlayerList = (player, sessionId) =>
   playersStore.update(players => ({
     ...players,
-    [sessionId]: {...player}
+    [sessionId]: { ...player }
   }));
-export const removePlayer = (player, sessionId) =>
-  playersStore.update(players =>
-    Object.keys(player)
-      .filter(sid => sid !== sessionId)
-      .reduce((obj, key) => {
-        obj[key] = players[key];
-        return obj;
-      }, {})
-  );
-export const addPlayerCard = (sessionId, card, index) =>
+export const removePlayer = (player, sessionId) => {
+  console.log(sessionId);
+  const playerId = 3;
+  const cb = (players) => {
+    console.log(playerId);
+    const { playerId, ...otherPlayers } = players;
+    return otherPlayers;
+  };
+  console.log(cb());
+  playersStore.update(cb);
+}
+export const addPlayerCard = (sessionId, card, index) => {
+  // avoid double card bug :-|
   playersStore.update(players => {
-    return {
-    ...players,
-    [sessionId]: {
-      ...players[sessionId],
-      cards: [...players[sessionId].cards, card],
+    if (players[sessionId].cards && players[sessionId].cards.includes(card)) {
+      return players;
     }
-  }});
+    return {
+      ...players,
+      [sessionId]: {
+        ...players[sessionId],
+        cards: [...players[sessionId].cards, card],
+      }
+    }
+  });
+}
 export const removePlayerCard = (sessionId, card, index) =>
   playersStore.update(players => ({
     ...players,

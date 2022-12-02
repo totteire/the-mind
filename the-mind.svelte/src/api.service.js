@@ -33,7 +33,6 @@ export const joinOrCreate = async (roomName) => {
   });
   room.onMessage("GREETINGS", () => {
     const unsubscribe = players.subscribe(players => {
-      console.log('updated me with ', [...players[room.sessionId].cards]);
       setMe(players[room.sessionId]);
     });
   });
@@ -50,7 +49,7 @@ export const joinOrCreate = async (roomName) => {
     // console.log(message);
   });
   room.onMessage("GAME_IN_PROGRESS", (message) => {
-    // console.log(message);
+    console.log(message);
   });
   room.onError((code, message) => {
     console.log(client.id, "couldn't join", room.name);
@@ -61,6 +60,7 @@ export const joinOrCreate = async (roomName) => {
     player.cards.onAdd = (card, index) => addPlayerCard(sessionId, card, index); 
     player.cards.onRemove = (card, index) => removePlayerCard(sessionId, card, index);
     player.cards.onChange = (card, key) => console.log('playerCard onChange', card, key);
+    console.log('addPlayer yoyo', player.cards);
     addPlayer(player, sessionId);
   }
   room.state.players.onRemove = (player, sessionId) => removePlayer(player, sessionId);
@@ -75,4 +75,6 @@ export const joinOrCreate = async (roomName) => {
 export const setPlayerName = (name) => room.send('SET_NAME', { name });
 export const startGame = () => room.send('START_GAME');
 export const playCard = (card) => room.send('PLAY_CARD', { card });
+export const stopGame = () => room.send('RESTART');
+window.stopGame = stopGame;
 

@@ -4,21 +4,6 @@
   import { flip } from "svelte/animate";
   import { fly } from "svelte/transition";
 
-  let timeout = 0;
-  let myCards = [];
-  me.subscribe((me) => {
-    const { cards } = me;
-    if (cards.length === myCards.length) {
-      timeout = 0;
-      return;
-    }
-    if (cards.length > myCards.length) {
-      timeout += 300;
-      setTimeout(() => myCards = [...myCards, cards[cards.length-1]], timeout);
-    } else {
-      myCards = [...cards];
-    }
-  });
 </script>
 
 {#if $game.isStarted}
@@ -26,11 +11,13 @@
     class="tube"
     transition:fly={{ y: 300, duration: 1000, delay: 0, opacity: 1 }}
   >
-    {#each myCards as card (card)}
-      <div animate:flip>
-        <Ball number={card} />
-      </div>
-    {/each}
+    {#if $me && $me.cards}
+      {#each $me.cards as card, index (card)}
+        <div animate:flip>
+          <Ball number={card} {index} />
+        </div>
+      {/each}
+    {/if}
   </div>
 {/if}
 

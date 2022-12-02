@@ -1,6 +1,7 @@
 <script>
   export let big = false;
   export let number;
+  export let index;
   import { fly } from "svelte/transition";
 </script>
 
@@ -15,7 +16,7 @@
 {:else}
   <div
     class="ball"
-    in:fly={{ x: 1500, duration: 2000 }}
+    in:fly={{ x: 1500, duration: 2000, delay: index * 500 }}
     out:fly={{ x: -1500, duration: 2000 }}
   >
     <div class="number">{number}</div>
